@@ -1,0 +1,83 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PIPFILE.lock
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ML/Data artifacts (large files)
+data/raw/**/*.csv
+data/raw/**/*.parquet
+data/processed/**/*.csv
+data/processed/**/*.parquet
+data/cache/**/*
+src/models/weights/*.pt
+src/models/weights/*.pth
+*.pkl
+*.joblib
+
+# Logs
+logs/
+*.log
+
+# Credentials (NEVER commit!)
+.env
+.env.local
+.env.*.local
+config/*.yaml
+!config/default.yaml
+
+# Jupiter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# OS
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
