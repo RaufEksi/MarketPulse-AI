@@ -1,0 +1,68 @@
+# MarketPulse AI - Default Configuration
+app:
+  name: "MarketPulse AI"
+  version: "1.0.0"
+  environment: "development"
+  log_level: "INFO"
+  seed: 42
+
+data:
+  symbols: ["SPY", "QQQ", "AAPL", "MSFT", "NVDA", "TSLA"]
+  bar_timeframe: "5Min"
+  lookback_bars: 78 # 1 full trading day of 5-min bars (6.5 hrs * 12 bars)
+  prediction_horizon_bars: 6 # 30 minutes ahead
+  volatility_threshold_pct: 0.15 # 15% ATR increase threshold for spike class
+  decay_lambda_per_hour: 0.5 # Exponential decay rate for text signals
+  storage_dir: "data"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  cache_dir: "data/cache"
+
+nlp:
+  finbert_model: "ProsusAI/finbert"
+  max_length: 512
+  embedding_dim: 768
+  batch_size: 32
+  device: "cuda" # or "cpu"
+
+model:
+  time_series:
+    input_dim: 16 # OHLCV + technical indicators
+    hidden_dim: 128
+    num_layers: 2
+    dropout: 0.2
+    bidirectional: true
+    model_type: "bilstm" # "bilstm" or "tcn"
+  text_nlp:
+    input_dim: 768 # FinBERT embedding size
+    projected_dim: 128
+    dropout: 0.2
+  fusion:
+    embed_dim: 128
+    num_heads: 4
+    dense_dim: 64
+    dropout: 0.3
+    num_classes: 2 # Binary classification (0: normal, 1: volatility spike)
+
+training:
+  batch_size: 64
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  epochs: 50
+  early_stopping_patience: 7
+  loss_type: "focal" # "focal" or "weighted_bce"
+  focal_gamma: 2.0
+  focal_alpha: 0.75
+  val_split: 0.15
+  test_split: 0.15
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  workers: 2
+
+dashboard:
+  host: "0.0.0.0"
+  port: 8501
+  theme: "dark"

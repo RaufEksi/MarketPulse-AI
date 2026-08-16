@@ -1,0 +1,43 @@
+1. FinTech / Makroekonomi: MarketPulse AI
+1. Proje Adı & Etkileyici Özeti (Elevator Pitch)
+MarketPulse AI: Çok Modallı (Multi-Modal) Finansal Volatilite ve Rejim Kırılması Tahminleyici
+Hisse senedi fiyatını nokta atışı tahmin etmeye çalışan klasik ve başarısız modeller yerine; alternatif veri kaynaklarını (finansal haberler, sosyal medya duyarlılığı) ve tarihsel fiyat hacim grafiklerini harmanlayarak bir varlığın kısa vadeli volatilite sıçramalarını (ani düşüş/yükseliş risklerini) tahmin eden hibrit yapay zeka sistemi.
+
+2. Çözülen Gerçek Dünya Problemi ve Sektörel Değeri
+Finans piyasalarında fiyat yönünü bilmekten daha değerli bir şey varsa, o da risk ve volatiliteyi doğru ölçmektir. Portföy yöneticileri ve risk algoritmaları, piyasa anomaliye girdiğinde pozisyon kapatmak veya riskten korunmak (hedging) için yaklaşan volatilite dalgalarını önceden bilmek ister.
+
+3. Veri Kaynağı Stratejisi
+Zaman Serisi & Hacim: Yahoo Finance API (yfinance) veya Alpaca API üzerinden seçilen 5 farklı teknoloji hissesinin 5 dakikalık (intraday) bar verileri.
+
+Alternatif Metin Verisi (Scraping/API): NewsAPI, Reddit API (PRAW ile r/wallstreetbets ve r/stocks alt dizinleri) veya SEC EDGAR üzerinden çekilen anlık finansal haber başlıkları ve yorumlar.
+
+4. Uçtan Uca Teknik Mimari
+Veri Hazırlama & EDA Adımları:
+
+Fiyat verilerinde teknik göstergelerin (RSI, MACD, Bollinger Bantları, Rolling Volatility) üretilmesi (Feature Engineering).
+
+Haber ve sosyal medya metinlerinin zamansal olarak fiyat barlarıyla hizalanması, kayıp verilerin imputasyonu ve aykırı değerlerin (outlier) analizi.
+
+Geleneksel ML Baseline Modeli (Scikit-Learn):
+
+Sadece üretilen teknik göstergeleri ve basit TF-IDF duyarlılık skorlarını kullanan bir HistGradientBoostingClassifier veya Random Forest modeli kurarak bir referans (baseline) başarım skoru elde etmek.
+
+Gelişmiş Derin Öğrenme Modeli (PyTorch/TF - Hibrit Mimari):
+
+İki Dallar (Two-Branch) Ağ Mimarisi: Birinci dal, zaman serisi verilerini işleyen bir Bi-LSTM (Bidirectional LSTM) veya TCN (Temporal Convolutional Network) katmanıdır. İkinci dal ise metin verilerini alıp FinBERT veya RoBERTa üzerinden gömme (embedding) vektörlerine çeviren NLP katmanıdır.
+
+Bu iki dalın çıktıları bir Concatenation (Birleştirme) katmanında birleşir ve tam bağlantılı (Dense/Linear) katmanlardan geçerek volatilite anomalisini sınıflandırır.
+
+Sunum / Deployment Katmanı:
+
+FastAPI arka plan (backend) servisi anlık API isteklerini işlerken, Streamlit ile aracı kurum terminallerini andıran interaktif bir gösterge paneli (dashboard) sunulur. Kullanıcı hisse seçer, model risk kademesini (Düşük/Orta/Krik Volatilite) ekrana basar.
+
+5. CV'de Vurgulayacağı "Kritik Yetkinlikler"
+Farklı frekanstaki (metin ve zaman serisi) heterojen verileri zamansal olarak hizalayabilme becerisi.
+
+Klasik ML ile Derin Öğrenmeyi adil bir şekilde kıyaslama (Benchmarking & Hypothesis Testing).
+
+Transfer Learning (FinBERT) ve zaman serisi derin öğrenme modellerini PyTorch'ta özel (custom) bir mimariyle birleştirme.
+
+6. Portföyde "Süper Star" Etkisi Yaratacak Ekstra Özellik
+SHAP (SHapley Additive exPlanations) & Integrated Gradients Katmanı: Model bir "Yüksek Volatilite Riski" uyarısı verdiğinde, Streamlit arayüzü bu karara hangi faktörün sebep olduğunu görselleştirir. Mülakatçıya şunu gösterirsin: "Model risk verdi çünkü 5 dakika önce düşen 'Düzenleyici Kurum İncelemesi' başlığının etkisi %65, RSI uyumsuzluğunun etkisi %20 oldu." Bu, finansal yapay zekada en çok aranan Explainable AI (XAI) yetkinliğidir.
