@@ -40,6 +40,23 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Root welcome & redirection endpoint
+    @app.get("/")
+    async def root():
+        return {
+            "message": "Welcome to MarketPulse AI REST API",
+            "version": settings.app.version,
+            "documentation": "/docs",
+            "status": "healthy",
+            "endpoints": {
+                "health": "/health",
+                "predict": "/predict",
+                "explain": "/explain",
+                "backtest": "/backtest",
+                "metrics": "/metrics",
+            },
+        }
+
     # Include route modules
     app.include_router(predict.router, tags=["Prediction"])
     app.include_router(explain.router, tags=["Explainability"])
