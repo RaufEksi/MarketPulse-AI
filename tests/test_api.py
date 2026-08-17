@@ -3,6 +3,7 @@ Integration tests for FastAPI REST endpoints.
 """
 
 from fastapi.testclient import TestClient
+
 from src.api.main import app
 
 client = TestClient(app)
@@ -52,16 +53,18 @@ def test_explain_endpoint():
 def test_predict_endpoint(sample_ohlcv_df):
     bars_list = []
     for _, row in sample_ohlcv_df.head(25).iterrows():
-        bars_list.append({
-            "timestamp": row["timestamp"].isoformat(),
-            "open": float(row["open"]),
-            "high": float(row["high"]),
-            "low": float(row["low"]),
-            "close": float(row["close"]),
-            "volume": float(row["volume"]),
-            "vwap": float(row["vwap"]),
-            "trade_count": int(row["trade_count"]),
-        })
+        bars_list.append(
+            {
+                "timestamp": row["timestamp"].isoformat(),
+                "open": float(row["open"]),
+                "high": float(row["high"]),
+                "low": float(row["low"]),
+                "close": float(row["close"]),
+                "volume": float(row["volume"]),
+                "vwap": float(row["vwap"]),
+                "trade_count": int(row["trade_count"]),
+            }
+        )
 
     payload = {
         "symbol": "SPY",
@@ -86,16 +89,18 @@ def test_predict_endpoint(sample_ohlcv_df):
 def test_explain_endpoint_with_custom_bars(sample_ohlcv_df):
     bars_list = []
     for _, row in sample_ohlcv_df.head(25).iterrows():
-        bars_list.append({
-            "timestamp": row["timestamp"].isoformat(),
-            "open": float(row["open"]),
-            "high": float(row["high"]),
-            "low": float(row["low"]),
-            "close": float(row["close"]),
-            "volume": float(row["volume"]),
-            "vwap": float(row["vwap"]),
-            "trade_count": int(row["trade_count"]),
-        })
+        bars_list.append(
+            {
+                "timestamp": row["timestamp"].isoformat(),
+                "open": float(row["open"]),
+                "high": float(row["high"]),
+                "low": float(row["low"]),
+                "close": float(row["close"]),
+                "volume": float(row["volume"]),
+                "vwap": float(row["vwap"]),
+                "trade_count": int(row["trade_count"]),
+            }
+        )
 
     payload = {
         "prediction_id": "mp-custom-456",
@@ -117,5 +122,3 @@ def test_explain_endpoint_with_custom_bars(sample_ohlcv_df):
     assert len(data["top_features"]) <= 4
     assert "news_sentiment_pct" in data["risk_decomposition"]
     assert "technical_indicators_pct" in data["risk_decomposition"]
-
-

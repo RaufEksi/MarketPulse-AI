@@ -3,10 +3,12 @@ Machine Learning Baseline Models (HistGradientBoosting, RandomForest).
 Provides benchmark reference for deep learning evaluation.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Dict
+
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.metrics import roc_auc_score, average_precision_score, f1_score, brier_score_loss
+from sklearn.metrics import average_precision_score, brier_score_loss, f1_score, roc_auc_score
+
 from src.utils.logger import get_logger
 
 logger = get_logger("BaselineModels")

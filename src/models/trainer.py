@@ -3,12 +3,14 @@ PyTorch Training Loop with Focal Loss, LR scheduling, Early Stopping & Checkpoin
 """
 
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from sklearn.metrics import average_precision_score, roc_auc_score
+from torch.utils.data import DataLoader
+
 from src.config.settings import get_settings
 from src.models.hybrid_network import MarketPulseNet
 from src.models.loss_functions import BinaryFocalLoss
@@ -19,7 +21,8 @@ logger = get_logger("ModelTrainer")
 
 class ModelTrainer:
     """
-    Manages end-to-end model training, validation, metric evaluation, early stopping, and model serialization.
+    Manages end-to-end model training, validation, metric evaluation,
+    early stopping, and model serialization.
     """
 
     def __init__(
@@ -153,4 +156,3 @@ class ModelTrainer:
 
         logger.info(f"Training completed. Best PR-AUC: {best_pr_auc:.4f} at epoch {best_epoch}")
         return {"best_pr_auc": best_pr_auc, "best_epoch": best_epoch}
-

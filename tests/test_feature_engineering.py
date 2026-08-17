@@ -3,10 +3,10 @@ Unit tests for Technical Indicators and Feature Engineering.
 """
 
 import pandas as pd
-import numpy as np
+
+from src.feature_engineering.labeler import VolatilityLabeler
 from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
 from src.feature_engineering.text_preprocessor import TextPreprocessor
-from src.feature_engineering.labeler import VolatilityLabeler
 
 
 def test_technical_indicator_engine(sample_ohlcv_df: pd.DataFrame):

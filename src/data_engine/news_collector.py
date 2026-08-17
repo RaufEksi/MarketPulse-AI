@@ -4,8 +4,10 @@ NewsAPI & GDELT financial news and headline ingestion collector.
 
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
+
 import pandas as pd
 import requests
+
 from src.config.settings import get_settings
 from src.utils.exceptions import DataIngestionError
 from src.utils.logger import get_logger
@@ -52,15 +54,17 @@ class NewsCollector:
             for art in articles:
                 text = f"{art.get('title', '')}. {art.get('description', '')}"
                 matched_symbol = next((s for s in symbols if s in text), symbols[0])
-                records.append({
-                    "id": art.get("url"),
-                    "timestamp": pd.to_datetime(art.get("publishedAt")),
-                    "symbol": matched_symbol,
-                    "source": f"news/{art.get('source', {}).get('name', 'web')}",
-                    "text": art.get("title", ""),
-                    "score": 100,
-                    "num_comments": 0,
-                })
+                records.append(
+                    {
+                        "id": art.get("url"),
+                        "timestamp": pd.to_datetime(art.get("publishedAt")),
+                        "symbol": matched_symbol,
+                        "source": f"news/{art.get('source', {}).get('name', 'web')}",
+                        "text": art.get("title", ""),
+                        "score": 100,
+                        "num_comments": 0,
+                    }
+                )
             return pd.DataFrame(records)
         except Exception as e:
             logger.error(f"NewsAPI error: {str(e)}")
@@ -69,24 +73,27 @@ class NewsCollector:
     def _generate_synthetic_news(self, symbols: List[str], count: int) -> pd.DataFrame:
         """Generate realistic synthetic financial news headlines."""
         import random
+
         templates = [
             "Federal Reserve hints at interest rate policy shift during emergency briefing.",
-            "Semiconductor manufacturing bottlenecks raise supply chain concerns across tech sector.",
+            "Semiconductor bottlenecks raise supply chain concerns across tech sector.",
             "Tech giants report unprecedented demand for enterprise AI infrastructure.",
-            "Department of Justice initiates regulatory antitrust review into major software vendors.",
+            "DOJ initiates regulatory antitrust review into major software vendors.",
             "Macroeconomic consumer sentiment index falls below analyst consensus.",
         ]
         records = []
         now = datetime.now(timezone.utc)
         for i in range(count):
             symbol = random.choice(symbols)
-            records.append({
-                "id": f"news_syn_{i}",
-                "timestamp": now - timedelta(minutes=random.randint(1, 400)),
-                "symbol": symbol,
-                "source": "news/Reuters",
-                "text": f"{symbol}: {random.choice(templates)}",
-                "score": 100,
-                "num_comments": 0,
-            })
+            records.append(
+                {
+                    "id": f"news_syn_{i}",
+                    "timestamp": now - timedelta(minutes=random.randint(1, 400)),
+                    "symbol": symbol,
+                    "source": "news/Reuters",
+                    "text": f"{symbol}: {random.choice(templates)}",
+                    "score": 100,
+                    "num_comments": 0,
+                }
+            )
         return pd.DataFrame(records)

@@ -4,6 +4,7 @@ FastAPI /backtest endpoint: Quantitative strategy backtesting simulation.
 
 import numpy as np
 from fastapi import APIRouter
+
 from src.api.schemas import BacktestRequest, BacktestResponse
 from src.models.backtester import VolatilityBacktester
 

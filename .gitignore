@@ -40,12 +40,14 @@ env/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 .tox/
 
 # ML/Data artifacts (large files)
 data/raw/**/*.csv
 data/raw/**/*.parquet
+data/raw/*.json
 data/processed/**/*.csv
 data/processed/**/*.parquet
 data/cache/**/*

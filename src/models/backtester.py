@@ -3,9 +3,10 @@ Quantitative Backtesting & Volatility Strategy Simulator.
 Simulates dynamic position sizing and volatility avoidance hedging against Buy & Hold benchmark.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 import numpy as np
-import pandas as pd
+
 from src.utils.metrics import calculate_financial_metrics
 
 

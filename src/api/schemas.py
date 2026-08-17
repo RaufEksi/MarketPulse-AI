@@ -3,7 +3,8 @@ Pydantic v2 Request & Response schemas for MarketPulse AI REST API.
 """
 
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 

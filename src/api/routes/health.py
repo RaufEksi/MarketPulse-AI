@@ -3,8 +3,10 @@ FastAPI /health and /metrics endpoints for Kubernetes & Prometheus monitoring.
 """
 
 from datetime import datetime, timezone
+
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
+
 from src.api.schemas import HealthResponse
 from src.config.settings import get_settings
 

@@ -3,7 +3,8 @@ Multi-Head Cross-Attention Fusion Layer.
 Allows text sentiment embeddings (Query) to attend over sequential price features (Key, Value).
 """
 
-from typing import Tuple, Optional
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 

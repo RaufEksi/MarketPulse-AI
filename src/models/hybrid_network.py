@@ -3,13 +3,14 @@ End-to-End MarketPulseNet Hybrid Deep Learning Network.
 Combines TimeSeriesEncoder, TextProjectionEncoder, CrossAttentionFusion and a Classification Head.
 """
 
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple
+
 import torch
 import torch.nn as nn
-from src.config.settings import get_settings
-from src.models.time_series_branch import TimeSeriesEncoder
-from src.models.text_branch import TextProjectionEncoder
+
 from src.models.cross_attention import CrossAttentionFusion
+from src.models.text_branch import TextProjectionEncoder
+from src.models.time_series_branch import TimeSeriesEncoder
 
 
 class MarketPulseNet(nn.Module):

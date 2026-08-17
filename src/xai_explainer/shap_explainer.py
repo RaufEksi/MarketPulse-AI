@@ -3,8 +3,10 @@ SHAP (SHapley Additive exPlanations) Explainer.
 Computes feature attribution for tabular technical indicators and models.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+
 from src.utils.logger import get_logger
 
 logger = get_logger("ShapExplainer")
@@ -44,6 +46,7 @@ class ShapExplainer:
             return
         try:
             import shap
+
             if hasattr(self.model, "predict_proba"):
                 self._explainer = shap.Explainer(self.model.predict_proba, self.background_data)
             elif hasattr(self.model, "predict"):
@@ -53,7 +56,9 @@ class ShapExplainer:
             else:
                 self._explainer = None
         except Exception as e:
-            logger.warning(f"Could not initialize SHAP explainer ({str(e)}); using perturbation fallback.")
+            logger.warning(
+                f"Could not initialize SHAP explainer ({str(e)}); using perturbation fallback."
+            )
             self._explainer = None
 
     def explain_instance(
@@ -80,7 +85,9 @@ class ShapExplainer:
                 if vals.ndim > 1:
                     vals = vals[:, 1]  # positive class probability slice
             except Exception as ex:
-                logger.warning(f"SHAP evaluation failed ({str(ex)}); falling back to sensitivity ranking.")
+                logger.warning(
+                    f"SHAP evaluation failed ({str(ex)}); falling back to sensitivity ranking."
+                )
                 vals = np.random.normal(0, 0.1, size=len(feature_names))
         else:
             # Fallback perturbation-based sensitivity
@@ -94,4 +101,3 @@ class ShapExplainer:
         # Sort by absolute SHAP magnitude
         results.sort(key=lambda x: abs(x["shap_value"]), reverse=True)
         return results
-

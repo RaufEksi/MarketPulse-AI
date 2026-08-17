@@ -2,10 +2,9 @@
 System Health, Monitoring & Latency Diagnostics Page.
 """
 
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
 import numpy as np
+import plotly.graph_objects as go
+import streamlit as st
 
 st.title("🩺 System Health & Pipeline Observability")
 

@@ -2,10 +2,12 @@
 Alpaca Markets 5-minute OHLCV bar collector.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Optional
+
 import pandas as pd
 import requests
+
 from src.config.settings import get_settings
 from src.utils.exceptions import DataIngestionError
 from src.utils.logger import get_logger
@@ -41,7 +43,9 @@ class AlpacaDataCollector:
         """
         if not self.api_key or not self.secret_key:
             logger.warning("Alpaca credentials missing; generating synthetic fallback data.")
-            return self._generate_synthetic_bars(symbol, start_time, end_time or datetime.now(timezone.utc))
+            return self._generate_synthetic_bars(
+                symbol, start_time, end_time or datetime.now(timezone.utc)
+            )
 
         if end_time is None:
             end_time = datetime.now(timezone.utc)
@@ -67,7 +71,18 @@ class AlpacaDataCollector:
 
             if not data:
                 logger.warning(f"No bars returned for {symbol} between {start_time} and {end_time}")
-                return pd.DataFrame(columns=["timestamp", "open", "high", "low", "close", "volume", "vwap", "trade_count"])
+                return pd.DataFrame(
+                    columns=[
+                        "timestamp",
+                        "open",
+                        "high",
+                        "low",
+                        "close",
+                        "volume",
+                        "vwap",
+                        "trade_count",
+                    ]
+                )
 
             df = pd.DataFrame(data)
             df = df.rename(
@@ -89,9 +104,12 @@ class AlpacaDataCollector:
             logger.error(f"Failed to fetch Alpaca bars for {symbol}: {str(e)}")
             raise DataIngestionError(f"Alpaca API error: {str(e)}")
 
-    def _generate_synthetic_bars(self, symbol: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+    def _generate_synthetic_bars(
+        self, symbol: str, start_time: datetime, end_time: datetime
+    ) -> pd.DataFrame:
         """Generates realistic synthetic 5-min bars for testing/offline simulation."""
         import numpy as np
+
         date_range = pd.date_range(start=start_time, end=end_time, freq="5min", tz="UTC")
         if len(date_range) == 0:
             date_range = pd.date_range(start=start_time, periods=78, freq="5min", tz="UTC")
@@ -108,14 +126,16 @@ class AlpacaDataCollector:
         closes = prices
         volumes = np.random.randint(10000, 500000, size=n)
 
-        return pd.DataFrame({
-            "timestamp": date_range,
-            "symbol": symbol,
-            "open": opens,
-            "high": highs,
-            "low": lows,
-            "close": closes,
-            "volume": volumes,
-            "vwap": (opens + highs + lows + closes) / 4.0,
-            "trade_count": np.random.randint(100, 5000, size=n),
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": date_range,
+                "symbol": symbol,
+                "open": opens,
+                "high": highs,
+                "low": lows,
+                "close": closes,
+                "volume": volumes,
+                "vwap": (opens + highs + lows + closes) / 4.0,
+                "trade_count": np.random.randint(100, 5000, size=n),
+            }
+        )

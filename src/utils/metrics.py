@@ -3,6 +3,7 @@ Financial and Machine Learning metrics utilities for MarketPulse AI.
 """
 
 from typing import Dict
+
 import numpy as np
 
 
@@ -38,13 +39,9 @@ def calculate_financial_metrics(
 
     downside_returns = returns[returns < 0]
     downside_std = np.std(downside_returns) + 1e-9 if len(downside_returns) > 0 else 1e-9
-    sortino_ratio = float(
-        np.mean(excess_returns) / downside_std * np.sqrt(periods_per_year)
-    )
+    sortino_ratio = float(np.mean(excess_returns) / downside_std * np.sqrt(periods_per_year))
 
-    calmar_ratio = (
-        float(annualized_return / abs(max_drawdown)) if abs(max_drawdown) > 1e-6 else 0.0
-    )
+    calmar_ratio = float(annualized_return / abs(max_drawdown)) if abs(max_drawdown) > 1e-6 else 0.0
     win_rate = float(np.mean(returns > 0))
 
     return {
@@ -63,7 +60,8 @@ def calculate_classification_metrics(
     y_true: np.ndarray, y_prob: np.ndarray, threshold: float = 0.5
 ) -> Dict[str, float]:
     """
-    Calculate classification metrics: Accuracy, Precision, Recall, F1, PR-AUC approximation, Brier Score.
+    Calculate classification metrics: Accuracy, Precision, Recall, F1,
+    PR-AUC approximation, Brier Score.
     """
     y_pred = (y_prob >= threshold).astype(int)
     tp = np.sum((y_true == 1) & (y_pred == 1))

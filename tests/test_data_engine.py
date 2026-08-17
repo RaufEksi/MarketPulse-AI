@@ -4,12 +4,12 @@ Unit tests for data engine connectors and storage manager.
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
 import pandas as pd
-import pytest
+
 from src.data_engine.alpaca_connector import AlpacaDataCollector
-from src.data_engine.yfinance_connector import YFinanceDataCollector
-from src.data_engine.reddit_collector import RedditCollector
 from src.data_engine.news_collector import NewsCollector
+from src.data_engine.reddit_collector import RedditCollector
 from src.data_engine.storage_manager import StorageManager
 
 
@@ -50,16 +50,18 @@ def test_news_collector_synthetic():
 
 def test_storage_manager_lifecycle(tmp_path: Path):
     storage = StorageManager(base_dir=str(tmp_path))
-    sample_df = pd.DataFrame({
-        "timestamp": [datetime.now(timezone.utc)],
-        "open": [500.0],
-        "high": [505.0],
-        "low": [495.0],
-        "close": [502.0],
-        "volume": [10000],
-        "vwap": [501.0],
-        "trade_count": [100],
-    })
+    sample_df = pd.DataFrame(
+        {
+            "timestamp": [datetime.now(timezone.utc)],
+            "open": [500.0],
+            "high": [505.0],
+            "low": [495.0],
+            "close": [502.0],
+            "volume": [10000],
+            "vwap": [501.0],
+            "trade_count": [100],
+        }
+    )
 
     # Save and Load raw bars
     saved_path = storage.save_raw_bars(sample_df, "SPY")
@@ -83,4 +85,3 @@ def test_storage_manager_lifecycle(tmp_path: Path):
     # Retention policy test
     cleaned = storage.clean_retention_policy(max_age_days=10)
     assert isinstance(cleaned, int)
-

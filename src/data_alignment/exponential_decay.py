@@ -5,8 +5,10 @@ Formula: S_fused(t_bar) = sum_{i: t_i <= t_bar} [ S_i * exp(-lambda * (t_bar - t
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
+
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
@@ -15,14 +17,13 @@ logger = get_logger("TemporalAligner")
 
 class TemporalAligner:
     """
-    Implements vectorized exponential decay temporal alignment between text embeddings and OHLCV bars.
+    Implements vectorized exponential decay temporal alignment
+    between text embeddings and OHLCV bars.
     """
 
     def __init__(self, decay_lambda_per_hour: Optional[float] = None):
         settings = get_settings()
-        self.decay_lambda_per_hour = (
-            decay_lambda_per_hour or settings.data.decay_lambda_per_hour
-        )
+        self.decay_lambda_per_hour = decay_lambda_per_hour or settings.data.decay_lambda_per_hour
         # Convert lambda to per-second decay rate: lambda_sec = lambda_hour / 3600
         self.decay_lambda_sec = self.decay_lambda_per_hour / 3600.0
 

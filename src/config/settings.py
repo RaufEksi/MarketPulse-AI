@@ -4,7 +4,8 @@ Pydantic settings and YAML configuration loader for MarketPulse AI.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
+
 import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -82,14 +83,14 @@ class TrainingSettings(BaseSettings):
 
 
 class APISettings(BaseSettings):
-    host: str = "0.0.0.0"
+    host: str = "0.0.0.0"  # nosec B104
     port: int = 8000
     reload: bool = False
     workers: int = 2
 
 
 class DashboardSettings(BaseSettings):
-    host: str = "0.0.0.0"
+    host: str = "0.0.0.0"  # nosec B104
     port: int = 8501
     theme: str = "dark"
 
@@ -99,6 +100,7 @@ class Settings(BaseSettings):
     Unified Application Settings.
     Loads from .env first, then default.yaml, with environment-specific overrides.
     """
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -112,12 +114,8 @@ class Settings(BaseSettings):
         default="https://paper-api.alpaca.markets", alias="ALPACA_BASE_URL"
     )
     reddit_client_id: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_ID")
-    reddit_client_secret: Optional[str] = Field(
-        default=None, alias="REDDIT_CLIENT_SECRET"
-    )
-    reddit_user_agent: str = Field(
-        default="MarketPulseAI/1.0.0", alias="REDDIT_USER_AGENT"
-    )
+    reddit_client_secret: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_SECRET")
+    reddit_user_agent: str = Field(default="MarketPulseAI/1.0.0", alias="REDDIT_USER_AGENT")
     news_api_key: Optional[str] = Field(default=None, alias="NEWS_API_KEY")
 
     # Structured YAML Sub-configs

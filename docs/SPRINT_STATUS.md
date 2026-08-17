@@ -17,6 +17,19 @@
 | #1-3 | Multi-Stage Dockerfile & docker-compose | ✅ Done | `Dockerfile` + `docker-compose.yml` with health checks |
 | #1-4 | GitHub Actions CI/CD Pipeline | ✅ Done | `.github/workflows/ci.yml` — Black, isort, Flake8, Bandit, pytest matrix (3.10, 3.11) |
 
+**Sprint 1 Deliverables**:
+- [x] `src/config/settings.py` with nested Pydantic Settings classes
+- [x] `config/default.yaml`, `config/development.yaml`, `config/production.yaml`
+- [x] `src/utils/logger.py` with JSON structured logging
+- [x] `src/utils/exceptions.py` with MarketPulseException hierarchy
+- [x] `src/utils/metrics.py` with financial evaluation metrics
+- [x] `Dockerfile` multi-stage build
+- [x] `docker-compose.yml` with API + Dashboard services
+- [x] `Makefile` with setup, test, lint, format, serve, docker tasks
+- [x] `.github/workflows/ci.yml` matrix CI pipeline
+- [x] `.github/ISSUE_TEMPLATE/` and `pull_request_template.md`
+- [x] `pyproject.toml` with full tooling config (black, isort, mypy, pytest, coverage)
+
 ---
 
 ## Sprint 2: Data Ingestion & Storage Lake ✅

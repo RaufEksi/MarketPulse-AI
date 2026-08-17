@@ -2,9 +2,8 @@
 Yahoo Finance 5-minute OHLCV fallback data collector.
 """
 
-from datetime import datetime, timezone
-from typing import Optional
 import pandas as pd
+
 from src.utils.exceptions import DataIngestionError
 from src.utils.logger import get_logger
 
@@ -26,6 +25,7 @@ class YFinanceDataCollector:
         """
         try:
             import yfinance as yf
+
             ticker = yf.Ticker(symbol)
             df = ticker.history(period=period, interval="5m")
 
@@ -48,7 +48,19 @@ class YFinanceDataCollector:
             df["symbol"] = symbol
             df["vwap"] = (df["open"] + df["high"] + df["low"] + df["close"]) / 4.0
             df["trade_count"] = 0
-            return df[["timestamp", "symbol", "open", "high", "low", "close", "volume", "vwap", "trade_count"]]
+            return df[
+                [
+                    "timestamp",
+                    "symbol",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "volume",
+                    "vwap",
+                    "trade_count",
+                ]
+            ]
         except Exception as e:
             logger.error(f"Failed to fetch yfinance bars for {symbol}: {str(e)}")
             raise DataIngestionError(f"yfinance error: {str(e)}")

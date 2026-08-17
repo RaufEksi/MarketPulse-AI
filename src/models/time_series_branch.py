@@ -31,14 +31,24 @@ class TemporalBlock(nn.Module):
     ):
         super().__init__()
         self.conv1 = nn.Conv1d(
-            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
         )
         self.chomp1 = Chomp1d(padding)
         self.relu1 = nn.GELU()
         self.dropout1 = nn.Dropout(dropout)
 
         self.conv2 = nn.Conv1d(
-            out_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation
+            out_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
         )
         self.chomp2 = Chomp1d(padding)
         self.relu2 = nn.GELU()

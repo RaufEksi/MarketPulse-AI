@@ -4,11 +4,11 @@ Unit tests for Explainable AI (XAI) and Risk Attribution components.
 
 import numpy as np
 import torch
-import pytest
+
+from src.models.hybrid_network import MarketPulseNet
 from src.xai_explainer.attribution_service import RiskAttributionService
 from src.xai_explainer.integrated_gradients import IntegratedGradientsExplainer
-from src.xai_explainer.shap_explainer import ShapExplainer, DEFAULT_FEATURE_NAMES
-from src.models.hybrid_network import MarketPulseNet
+from src.xai_explainer.shap_explainer import DEFAULT_FEATURE_NAMES, ShapExplainer
 
 
 def test_risk_attribution_service_news_dominant():

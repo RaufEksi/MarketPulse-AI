@@ -5,6 +5,7 @@ Defines binary target: spike occurs if max(ATR[t+1:t+horizon]) >= ATR[t] * thres
 
 import numpy as np
 import pandas as pd
+
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
@@ -47,9 +48,9 @@ class VolatilityLabeler:
         df["volatility_expansion_ratio"] = df["future_max_atr"] / (df[atr_col] + 1e-9)
 
         # Binary label
-        df["atr_spike_target"] = (
-            df["future_max_atr"] >= (df[atr_col] * self.multiplier)
-        ).astype(float)
+        df["atr_spike_target"] = (df["future_max_atr"] >= (df[atr_col] * self.multiplier)).astype(
+            float
+        )
 
         # Mark trailing un-evaluable bars as NaN
         df.loc[df["future_max_atr"].isna(), "atr_spike_target"] = np.nan

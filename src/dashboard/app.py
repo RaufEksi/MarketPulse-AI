@@ -61,7 +61,10 @@ st.title("📊 MarketPulse AI — Multi-Modal Volatility Terminal")
 st.caption("Real-Time Regime Shift Detection & Explainable Volatility Forecasting")
 
 st.sidebar.title("⚡ Navigation")
-st.sidebar.info("Select a module from the sidebar to inspect real-time forecasts, XAI attribution, or backtest strategies.")
+st.sidebar.info(
+    "Select a module from the sidebar to inspect real-time forecasts, "
+    "XAI attribution, or backtest strategies."
+)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -75,16 +78,15 @@ with col4:
 
 st.markdown("---")
 st.markdown("### 📌 Terminal Overview")
-st.markdown(
-    """
-    **MarketPulse AI** combines deep micro-structure time-series analytics (5-min OHLCV bars) with 
-    unstructured financial NLP sentiment (FinBERT embeddings) using a hybrid PyTorch Cross-Attention network.
-    
+st.markdown("""
+    **MarketPulse AI** combines deep micro-structure time-series analytics (5-min OHLCV bars)
+    with unstructured financial NLP sentiment (FinBERT embeddings) using a hybrid PyTorch
+    Cross-Attention network.
+
     👈 **Use the sidebar pages to navigate:**
     1. **Real-Time Monitor:** Live volatility spike gauge and 5-min candlestick charts.
-    2. **Explainability Explorer:** SHAP waterfall analysis and factor decomposition (% News vs % Technicals).
+    2. **Explainability Explorer:** SHAP waterfall analysis and factor decomposition.
     3. **Backtesting Engine:** Strategy equity curve and risk-avoidance simulations.
     4. **Data Explorer:** Ingested bar tables and sentiment feeds.
     5. **System Health:** Prometheus metrics, latency logs, and pipeline status.
-    """
-)
+    """)

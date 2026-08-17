@@ -5,6 +5,7 @@ Calculates ATR, RSI, MACD, Bollinger Bands, Rolling Volatility, VWAP ratios with
 
 import numpy as np
 import pandas as pd
+
 from src.utils.logger import get_logger
 
 logger = get_logger("TechnicalFeatureEngine")
@@ -61,11 +62,13 @@ class TechnicalFeatureEngine:
         signal_line = macd_line.ewm(span=signal, adjust=False).mean()
         macd_hist = macd_line - signal_line
 
-        return pd.DataFrame({
-            "macd_line": macd_line,
-            "macd_signal": signal_line,
-            "macd_hist": macd_hist,
-        })
+        return pd.DataFrame(
+            {
+                "macd_line": macd_line,
+                "macd_signal": signal_line,
+                "macd_hist": macd_hist,
+            }
+        )
 
     @staticmethod
     def calculate_bollinger_bands(
@@ -83,15 +86,19 @@ class TechnicalFeatureEngine:
         pct_b = (df["close"] - lower_band) / (upper_band - lower_band + 1e-9)
         bandwidth = (upper_band - lower_band) / (sma + 1e-9)
 
-        return pd.DataFrame({
-            "bb_upper": upper_band,
-            "bb_lower": lower_band,
-            "bb_pct_b": pct_b,
-            "bb_bandwidth": bandwidth,
-        })
+        return pd.DataFrame(
+            {
+                "bb_upper": upper_band,
+                "bb_lower": lower_band,
+                "bb_pct_b": pct_b,
+                "bb_bandwidth": bandwidth,
+            }
+        )
 
     @staticmethod
-    def calculate_rolling_volatility(df: pd.DataFrame, windows: list[int] = [12, 36, 78]) -> pd.DataFrame:
+    def calculate_rolling_volatility(
+        df: pd.DataFrame, windows: list[int] = [12, 36, 78]
+    ) -> pd.DataFrame:
         """
         Rolling standard deviation of log returns.
         """
@@ -164,4 +171,3 @@ class TechnicalFeatureEngine:
         df["vwap_divergence"] = self.calculate_vwap_divergence(df)
 
         return df
-

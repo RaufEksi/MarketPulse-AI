@@ -4,8 +4,12 @@ Unit tests for Temporal Alignment and Dataset Building.
 
 import numpy as np
 import pandas as pd
+
+from src.data_alignment.dataset_builder import (
+    build_sliding_windows,
+    create_walk_forward_dataloaders,
+)
 from src.data_alignment.exponential_decay import TemporalAligner
-from src.data_alignment.dataset_builder import build_sliding_windows, create_walk_forward_dataloaders
 
 
 def test_exponential_decay_aligner(sample_ohlcv_df: pd.DataFrame, sample_text_df: pd.DataFrame):
@@ -48,4 +52,3 @@ def test_walk_forward_dataloaders():
     assert len(train_l.dataset) == 30
     assert len(val_l.dataset) == 10
     assert len(test_l.dataset) == 10
-

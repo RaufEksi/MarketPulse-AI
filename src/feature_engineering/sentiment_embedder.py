@@ -4,7 +4,9 @@ Extracts 768-dimensional CLS token embeddings from financial texts.
 """
 
 from typing import List, Optional
+
 import numpy as np
+
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
@@ -35,15 +37,17 @@ class FinBERTEmbedder:
         if self._model is not None:
             return True
         try:
-            from transformers import AutoTokenizer, AutoModel
-            import torch
-            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self._model = AutoModel.from_pretrained(self.model_name)
+            from transformers import AutoModel, AutoTokenizer
+
+            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)  # nosec B615
+            self._model = AutoModel.from_pretrained(self.model_name)  # nosec B615
             self._model.to(self.device)
             self._model.eval()
             return True
         except Exception as e:
-            logger.warning(f"Could not load Hugging Face FinBERT ({str(e)}); using fallback embedder.")
+            logger.warning(
+                f"Could not load Hugging Face FinBERT ({str(e)}); using fallback embedder."
+            )
             return False
 
     def embed_texts(self, texts: List[str], batch_size: int = 32) -> np.ndarray:

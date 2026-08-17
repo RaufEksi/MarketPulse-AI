@@ -4,16 +4,17 @@ FastAPI /predict endpoint: Real-time volatility spike prediction.
 
 import time
 import uuid
-from datetime import datetime, timezone
+
 import numpy as np
 import pandas as pd
 import torch
 from fastapi import APIRouter, HTTPException
-from src.api.schemas import PredictRequest, PredictResponse, ConfidenceInterval
-from src.models.hybrid_network import MarketPulseNet
-from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
-from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
+
+from src.api.schemas import ConfidenceInterval, PredictRequest, PredictResponse
 from src.data_alignment.exponential_decay import TemporalAligner
+from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
+from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
+from src.models.hybrid_network import MarketPulseNet
 from src.utils.logger import get_logger
 
 logger = get_logger("PredictRoute")
@@ -52,7 +53,10 @@ async def predict_volatility(request: PredictRequest) -> PredictResponse:
     if len(request.ohlcv_bars) < 20:
         raise HTTPException(
             status_code=400,
-            detail=f"At least 20 OHLCV bars required for feature extraction; received {len(request.ohlcv_bars)}",
+            detail=(
+                "At least 20 OHLCV bars required for feature extraction; "
+                f"received {len(request.ohlcv_bars)}"
+            ),
         )
 
     # 1. Convert bars to DataFrame and compute technical indicators
@@ -62,9 +66,22 @@ async def predict_volatility(request: PredictRequest) -> PredictResponse:
 
     # 2. Extract technical features array of shape [1, 78, 16]
     feature_cols = [
-        "open", "high", "low", "close", "volume_ratio", "log_return",
-        "atr_14", "rsi_14", "macd_line", "macd_signal", "macd_hist",
-        "bb_pct_b", "bb_bandwidth", "rolling_vol_12", "rolling_vol_36", "rolling_vol_78"
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume_ratio",
+        "log_return",
+        "atr_14",
+        "rsi_14",
+        "macd_line",
+        "macd_signal",
+        "macd_hist",
+        "bb_pct_b",
+        "bb_bandwidth",
+        "rolling_vol_12",
+        "rolling_vol_36",
+        "rolling_vol_78",
     ]
     for col in feature_cols:
         if col not in features_df.columns:

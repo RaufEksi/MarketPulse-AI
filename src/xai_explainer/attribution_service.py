@@ -1,10 +1,9 @@
 """
 Volatility Risk Factor Decomposition Service.
-Produces intuitive percentage breakdown: e.g. 65% Breaking News, 20% RSI Divergence, 15% Volume Surge.
+Produces intuitive percentage breakdown: e.g. 65% Breaking News, 20% RSI, 15% Volume.
 """
 
-from typing import Dict, Any, List
-import numpy as np
+from typing import Any, Dict, List
 
 
 class RiskAttributionService:
@@ -31,7 +30,9 @@ class RiskAttributionService:
         # Sub-divide technical share among top technical indicators
         tech_breakdown = {}
         if top_technical_factors:
-            tech_total_weight = sum(abs(f.get("shap_value", 1.0)) for f in top_technical_factors) + 1e-9
+            tech_total_weight = (
+                sum(abs(f.get("shap_value", 1.0)) for f in top_technical_factors) + 1e-9
+            )
             for factor in top_technical_factors[:5]:
                 fname = factor.get("feature", "technical_indicator")
                 weight = abs(factor.get("shap_value", 1.0))
@@ -41,16 +42,18 @@ class RiskAttributionService:
         # Determine dominant driver & synthesize narrative
         if news_share >= 50.0 and recent_headline:
             summary_narrative = (
-                f"Model flagged elevated risk primarily driven by {round(news_share)}% Sentiment/News shock "
-                f"('{recent_headline[:75]}...') accompanied by {round(tech_share)}% Technical market momentum indicators."
+                f"Model flagged elevated risk primarily driven by {round(news_share)}% "
+                f"Sentiment/News shock ('{recent_headline[:60]}...') accompanied by "
+                f"{round(tech_share)}% Technical market momentum indicators."
             )
             primary_driver = "Breaking News & Social Sentiment (NLP)"
         else:
             top_tech_names = list(tech_breakdown.keys())[:2]
             top_tech_str = " & ".join(top_tech_names) if top_tech_names else "momentum oscillators"
             summary_narrative = (
-                f"Model flagged elevated risk primarily driven by {round(tech_share)}% Technical Price Action "
-                f"({top_tech_str}) with {round(news_share)}% residual market news background sentiment."
+                f"Model flagged elevated risk primarily driven by {round(tech_share)}% "
+                f"Technical Price Action ({top_tech_str}) with "
+                f"{round(news_share)}% residual market news background sentiment."
             )
             primary_driver = "Technical Price Action & Order Flow Dynamics"
 
@@ -62,4 +65,3 @@ class RiskAttributionService:
             "primary_driver": primary_driver,
             "summary_narrative": summary_narrative,
         }
-

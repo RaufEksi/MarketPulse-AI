@@ -3,12 +3,12 @@ Multi-Modal Aligned Dataset & Walk-Forward DataLoader builder.
 Builds PyTorch tensors: Time-Series [Batch, 78, 16], Text Embeddings [Batch, 768], Target [Batch].
 """
 
-from typing import Tuple, Optional
+from typing import Tuple
+
 import numpy as np
-import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
-from src.config.settings import get_settings
+from torch.utils.data import DataLoader, Dataset
+
 from src.utils.logger import get_logger
 
 logger = get_logger("DatasetBuilder")
@@ -22,8 +22,8 @@ class MultiModalDataset(Dataset):
     def __init__(
         self,
         time_series_sequences: np.ndarray,  # shape [N, seq_len, num_features]
-        text_embeddings: np.ndarray,         # shape [N, text_dim]
-        targets: np.ndarray,                 # shape [N]
+        text_embeddings: np.ndarray,  # shape [N, text_dim]
+        targets: np.ndarray,  # shape [N]
     ):
         self.ts_data = torch.tensor(time_series_sequences, dtype=torch.float32)
         self.text_data = torch.tensor(text_embeddings, dtype=torch.float32)
@@ -92,9 +92,7 @@ def create_walk_forward_dataloaders(
         text_windows[train_end:val_end],
         targets[train_end:val_end],
     )
-    test_ds = MultiModalDataset(
-        ts_windows[val_end:], text_windows[val_end:], targets[val_end:]
-    )
+    test_ds = MultiModalDataset(ts_windows[val_end:], text_windows[val_end:], targets[val_end:])
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)

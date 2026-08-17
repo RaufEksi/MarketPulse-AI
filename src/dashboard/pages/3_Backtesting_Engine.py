@@ -77,7 +77,9 @@ with col_m3:
     st.metric("Strategy Sharpe", f"{sharpe_strat:.2f}", delta=f"{sharpe_strat - sharpe_bench:+.2f}")
 with col_m4:
     hedged_days = int(np.sum(allocations < 1.0))
-    st.metric("Days Hedged", f"{hedged_days} / {days}", delta=f"{(hedged_days/days)*100:.0f}% of time")
+    st.metric(
+        "Days Hedged", f"{hedged_days} / {days}", delta=f"{(hedged_days/days)*100:.0f}% of time"
+    )
 
 fig_eq = go.Figure()
 fig_eq.add_trace(
@@ -106,4 +108,3 @@ fig_eq.update_layout(
     xaxis_title="Trading Days",
 )
 st.plotly_chart(fig_eq, use_container_width=True)
-

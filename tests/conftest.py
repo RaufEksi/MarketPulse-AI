@@ -3,6 +3,7 @@ Pytest configuration, shared fixtures and mock data generators.
 """
 
 from datetime import datetime, timedelta, timezone
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -26,38 +27,42 @@ def sample_ohlcv_df() -> pd.DataFrame:
     closes = prices
     volumes = np.random.randint(10000, 100000, size=n)
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "SPY",
-        "open": opens,
-        "high": highs,
-        "low": lows,
-        "close": closes,
-        "volume": volumes,
-        "vwap": (opens + highs + lows + closes) / 4.0,
-        "trade_count": np.random.randint(50, 500, size=n),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "SPY",
+            "open": opens,
+            "high": highs,
+            "low": lows,
+            "close": closes,
+            "volume": volumes,
+            "vwap": (opens + highs + lows + closes) / 4.0,
+            "trade_count": np.random.randint(50, 500, size=n),
+        }
+    )
 
 
 @pytest.fixture
 def sample_text_df() -> pd.DataFrame:
     """Fixture providing sample financial text headlines."""
     now = datetime.now(timezone.utc)
-    return pd.DataFrame([
-        {
-            "id": "t1",
-            "timestamp": now - timedelta(minutes=45),
-            "symbol": "SPY",
-            "source": "news/Reuters",
-            "text": "FOMC member hints at interest rate cuts ahead.",
-            "score": 100,
-        },
-        {
-            "id": "t2",
-            "timestamp": now - timedelta(minutes=15),
-            "symbol": "SPY",
-            "source": "reddit/r/wallstreetbets",
-            "text": "Call option buying surges on SPY 550 strikes.",
-            "score": 250,
-        },
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "id": "t1",
+                "timestamp": now - timedelta(minutes=45),
+                "symbol": "SPY",
+                "source": "news/Reuters",
+                "text": "FOMC member hints at interest rate cuts ahead.",
+                "score": 100,
+            },
+            {
+                "id": "t2",
+                "timestamp": now - timedelta(minutes=15),
+                "symbol": "SPY",
+                "source": "reddit/r/wallstreetbets",
+                "text": "Call option buying surges on SPY 550 strikes.",
+                "score": 250,
+            },
+        ]
+    )

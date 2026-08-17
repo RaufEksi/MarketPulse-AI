@@ -3,19 +3,21 @@ FastAPI /explain endpoint: SHAP and factor attribution breakdown.
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 import torch
 from fastapi import APIRouter
+
 from src.api.schemas import ExplainRequest, ExplainResponse, TopFeature
+from src.data_alignment.exponential_decay import TemporalAligner
+from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
+from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
 from src.models.hybrid_network import MarketPulseNet
+from src.utils.logger import get_logger
 from src.xai_explainer.attribution_service import RiskAttributionService
 from src.xai_explainer.integrated_gradients import IntegratedGradientsExplainer
-from src.xai_explainer.shap_explainer import ShapExplainer, DEFAULT_FEATURE_NAMES
-from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
-from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
-from src.data_alignment.exponential_decay import TemporalAligner
-from src.utils.logger import get_logger
+from src.xai_explainer.shap_explainer import DEFAULT_FEATURE_NAMES, ShapExplainer
 
 logger = get_logger("ExplainRoute")
 router = APIRouter()
@@ -63,11 +65,15 @@ async def explain_prediction(request: ExplainRequest) -> ExplainResponse:
             embedder = FinBERTEmbedder()
             text_strings = [t.headline for t in request.recent_texts]
             embeddings = embedder.embed_texts(text_strings)
-            text_df = pd.DataFrame({
-                "timestamp": [t.timestamp for t in request.recent_texts],
-                "text": text_strings,
-            })
-            aligned_sentiment = _aligner.align_sentiment_to_bars(bars_df.tail(1), text_df, embeddings)
+            text_df = pd.DataFrame(
+                {
+                    "timestamp": [t.timestamp for t in request.recent_texts],
+                    "text": text_strings,
+                }
+            )
+            aligned_sentiment = _aligner.align_sentiment_to_bars(
+                bars_df.tail(1), text_df, embeddings
+            )
             text_tensor = torch.tensor(aligned_sentiment, dtype=torch.float32)
         else:
             text_tensor = torch.zeros((1, 768), dtype=torch.float32)
@@ -108,7 +114,9 @@ async def explain_prediction(request: ExplainRequest) -> ExplainResponse:
     decomp = _attribution_service.decompose_risk(
         text_attr_pct=text_pct,
         ts_attr_pct=ts_pct,
-        top_technical_factors=[f.model_dump() for f in top_features if f.feature != "finbert_breaking_sentiment"],
+        top_technical_factors=[
+            f.model_dump() for f in top_features if f.feature != "finbert_breaking_sentiment"
+        ],
         recent_headline=recent_headline,
     )
 
@@ -118,4 +126,3 @@ async def explain_prediction(request: ExplainRequest) -> ExplainResponse:
         risk_decomposition=decomp,
         top_features=top_features[: request.top_k_features],
     )
-

@@ -3,10 +3,12 @@ Real-Time Volatility Monitor Page.
 """
 
 from datetime import datetime, timedelta, timezone
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
 from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
 
 st.title("⚡ Real-Time Volatility & Risk Monitor")
@@ -19,12 +21,48 @@ symbol = st.selectbox(
 
 # Asset specific market profiles
 PROFILE_CONFIG = {
-    "NVDA": {"base": 128.5, "prob": 0.846, "vol_mult": 0.008, "atr_exp": "+23.4%", "risk": "CRITICAL_VOLATILITY"},
-    "TSLA": {"base": 218.0, "prob": 0.782, "vol_mult": 0.007, "atr_exp": "+19.1%", "risk": "CRITICAL_VOLATILITY"},
-    "QQQ":  {"base": 482.5, "prob": 0.448, "vol_mult": 0.004, "atr_exp": "+9.2%",  "risk": "MODERATE_VOLATILITY"},
-    "AAPL": {"base": 224.0, "prob": 0.345, "vol_mult": 0.003, "atr_exp": "+5.4%",  "risk": "LOW_VOLATILITY"},
-    "SPY":  {"base": 554.0, "prob": 0.284, "vol_mult": 0.002, "atr_exp": "+3.8%",  "risk": "LOW_VOLATILITY"},
-    "MSFT": {"base": 442.0, "prob": 0.228, "vol_mult": 0.0025, "atr_exp": "+2.9%", "risk": "LOW_VOLATILITY"},
+    "NVDA": {
+        "base": 128.5,
+        "prob": 0.846,
+        "vol_mult": 0.008,
+        "atr_exp": "+23.4%",
+        "risk": "CRITICAL_VOLATILITY",
+    },
+    "TSLA": {
+        "base": 218.0,
+        "prob": 0.782,
+        "vol_mult": 0.007,
+        "atr_exp": "+19.1%",
+        "risk": "CRITICAL_VOLATILITY",
+    },
+    "QQQ": {
+        "base": 482.5,
+        "prob": 0.448,
+        "vol_mult": 0.004,
+        "atr_exp": "+9.2%",
+        "risk": "MODERATE_VOLATILITY",
+    },
+    "AAPL": {
+        "base": 224.0,
+        "prob": 0.345,
+        "vol_mult": 0.003,
+        "atr_exp": "+5.4%",
+        "risk": "LOW_VOLATILITY",
+    },
+    "SPY": {
+        "base": 554.0,
+        "prob": 0.284,
+        "vol_mult": 0.002,
+        "atr_exp": "+3.8%",
+        "risk": "LOW_VOLATILITY",
+    },
+    "MSFT": {
+        "base": 442.0,
+        "prob": 0.228,
+        "vol_mult": 0.0025,
+        "atr_exp": "+2.9%",
+        "risk": "LOW_VOLATILITY",
+    },
 }
 
 cfg = PROFILE_CONFIG.get(symbol, PROFILE_CONFIG["SPY"])
@@ -51,9 +89,9 @@ closes = prices
 volumes = np.random.randint(15000, 350000, size=n_bars)
 
 # Compute live indicators
-raw_df = pd.DataFrame({
-    "open": opens, "high": highs, "low": lows, "close": closes, "volume": volumes
-})
+raw_df = pd.DataFrame(
+    {"open": opens, "high": highs, "low": lows, "close": closes, "volume": volumes}
+)
 engine = TechnicalFeatureEngine()
 feat_df = engine.transform(raw_df)
 latest_atr = feat_df["atr_14"].iloc[-1]
@@ -99,25 +137,25 @@ with col_gauge:
 
 with col_stats:
     if prob >= 0.70:
-        st.markdown(f"### 🚨 Warning Level: **CRITICAL VOLATILITY DETECTED**")
+        st.markdown("### 🚨 Warning Level: **CRITICAL VOLATILITY DETECTED**")
         rec_action = f"Reduce long {symbol} equity allocation by 80% / hedge via index options."
     elif prob >= 0.40:
-        st.markdown(f"### ⚠️ Warning Level: **MODERATE VOLATILITY ELEVATION**")
-        rec_action = f"Tighten stop-loss bands / scale down aggressive breakout positions by 40%."
+        st.markdown("### ⚠️ Warning Level: **MODERATE VOLATILITY ELEVATION**")
+        rec_action = "Tighten stop-loss bands / scale down aggressive breakout positions by 40%."
     else:
-        st.markdown(f"### 🟢 Warning Level: **LOW VOLATILITY REGIME (STABLE)**")
-        rec_action = f"Standard risk allocation. No hedging required."
+        st.markdown("### 🟢 Warning Level: **LOW VOLATILITY REGIME (STABLE)**")
+        rec_action = "Standard risk allocation. No hedging required."
 
     ci_lower = max(0.0, prob - 0.05)
     ci_upper = min(1.0, prob + 0.05)
 
     st.markdown(
-        f"""
-        - **Predicted Spike Probability:** `{prob*100:.1f}%` (CI: `{ci_lower*100:.1f}%` - `{ci_upper*100:.1f}%`)
-        - **Expected ATR Expansion:** `{cfg['atr_exp']}` over next 30 minutes
-        - **Live Market Microstructure:** ATR: `${latest_atr:.2f}` | RSI(14): `{latest_rsi:.1f}` | Current Price: `${closes[-1]:.2f}`
-        - **Algorithmic Risk Recommendation:** {rec_action}
-        """
+        f"- **Predicted Spike Probability:** `{prob*100:.1f}%` "
+        f"(CI: `{ci_lower*100:.1f}%` - `{ci_upper*100:.1f}%`)\n"
+        f"- **Expected ATR Expansion:** `{cfg['atr_exp']}` over next 30 minutes\n"
+        f"- **Live Market Microstructure:** ATR: `${latest_atr:.2f}` | "
+        f"RSI(14): `{latest_rsi:.1f}` | Current Price: `${closes[-1]:.2f}`\n"
+        f"- **Algorithmic Risk Recommendation:** {rec_action}"
     )
 
 # Candlestick Chart
@@ -142,4 +180,3 @@ fig_candle.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
 )
 st.plotly_chart(fig_candle, use_container_width=True)
-

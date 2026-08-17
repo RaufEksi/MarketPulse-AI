@@ -3,9 +3,11 @@ FastAPI application instance and middleware configuration for MarketPulse AI.
 """
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.routes import predict, explain, backtest, health
+
+from src.api.routes import backtest, explain, health, predict
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 

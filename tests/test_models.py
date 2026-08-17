@@ -4,10 +4,11 @@ Unit tests for Machine Learning and Deep Learning architectures.
 
 import numpy as np
 import torch
+
+from src.models.backtester import VolatilityBacktester
 from src.models.baseline_models import BaselineModelTrainer
 from src.models.hybrid_network import MarketPulseNet
 from src.models.loss_functions import BinaryFocalLoss
-from src.models.backtester import VolatilityBacktester
 
 
 def test_baseline_model_trainer():
@@ -64,6 +65,7 @@ def test_volatility_backtester():
 
 def test_time_series_encoder_tcn():
     from src.models.time_series_branch import TimeSeriesEncoder
+
     tcn_encoder = TimeSeriesEncoder(input_dim=16, hidden_dim=128, model_type="tcn")
     x = torch.randn(4, 78, 16)
     out = tcn_encoder(x)
@@ -83,10 +85,13 @@ def test_random_forest_baseline():
 
 def test_model_trainer_fit(tmp_path):
     from torch.utils.data import DataLoader, TensorDataset
+
     from src.models.trainer import ModelTrainer
 
     model = MarketPulseNet(ts_input_dim=16, text_input_dim=768, hidden_dim=64)
-    trainer = ModelTrainer(model=model, learning_rate=0.001, early_stopping_patience=2, device="cpu")
+    trainer = ModelTrainer(
+        model=model, learning_rate=0.001, early_stopping_patience=2, device="cpu"
+    )
 
     ts_data = torch.randn(32, 78, 16)
     text_data = torch.randn(32, 768)
@@ -95,7 +100,8 @@ def test_model_trainer_fit(tmp_path):
     dataset = TensorDataset(ts_data, text_data, y_data)
     loader = DataLoader(dataset, batch_size=16)
 
-    results = trainer.fit(train_loader=loader, val_loader=loader, epochs=3, checkpoint_dir=str(tmp_path))
+    results = trainer.fit(
+        train_loader=loader, val_loader=loader, epochs=3, checkpoint_dir=str(tmp_path)
+    )
     assert "best_pr_auc" in results
     assert "best_epoch" in results
-
