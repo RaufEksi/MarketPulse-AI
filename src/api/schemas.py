@@ -25,7 +25,7 @@ class SentimentEvent(BaseModel):
 
 
 class PredictRequest(BaseModel):
-    symbol: str = Field(..., example="SPY")
+    symbol: str = Field(..., json_schema_extra={"example": "SPY"})
     ohlcv_bars: List[OHLCVBar]
     recent_texts: List[SentimentEvent] = Field(default_factory=list)
 

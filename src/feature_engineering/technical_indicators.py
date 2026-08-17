@@ -101,6 +101,25 @@ class TechnicalFeatureEngine:
             vol_df[f"rolling_vol_{w}"] = log_returns.rolling(window=w).std()
         return vol_df
 
+    @staticmethod
+    def calculate_vwap_divergence(df: pd.DataFrame) -> pd.Series:
+        """
+        Calculate percentage divergence between close price and VWAP.
+        Formula: (close - vwap) / vwap
+        """
+        if "vwap" in df.columns and not df["vwap"].isna().all():
+            vwap = df["vwap"]
+        elif "volume" in df.columns and "high" in df.columns and "low" in df.columns:
+            typical_price = (df["high"] + df["low"] + df["close"]) / 3.0
+            cum_vol = df["volume"].cumsum()
+            cum_tp_vol = (typical_price * df["volume"]).cumsum()
+            vwap = cum_tp_vol / (cum_vol + 1e-9)
+        else:
+            vwap = df["close"].rolling(window=20, min_periods=1).mean()
+
+        divergence = (df["close"] - vwap) / (vwap + 1e-9)
+        return divergence.fillna(0.0)
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Apply all technical indicator transformations to an OHLCV DataFrame.
@@ -113,16 +132,16 @@ class TechnicalFeatureEngine:
         df["log_return"] = np.log(df["close"] / df["close"].shift(1)).fillna(0.0)
 
         # ATR
-        df["atr_14"] = self.calculate_atr(df, period=14).bfill()
+        df["atr_14"] = self.calculate_atr(df, period=14).bfill().fillna(0.0)
 
         # RSI
         df["rsi_14"] = self.calculate_rsi(df, period=14).fillna(50.0)
 
         # MACD
         macd_df = self.calculate_macd(df)
-        df["macd_line"] = macd_df["macd_line"]
-        df["macd_signal"] = macd_df["macd_signal"]
-        df["macd_hist"] = macd_df["macd_hist"]
+        df["macd_line"] = macd_df["macd_line"].fillna(0.0)
+        df["macd_signal"] = macd_df["macd_signal"].fillna(0.0)
+        df["macd_hist"] = macd_df["macd_hist"].fillna(0.0)
 
         # Bollinger Bands
         bb_df = self.calculate_bollinger_bands(df)
@@ -134,11 +153,15 @@ class TechnicalFeatureEngine:
         for col in vol_df.columns:
             df[col] = vol_df[col].fillna(0.0)
 
-        # Normalized Volume
+        # Normalized Volume & Micro-structure
         if "volume" in df.columns:
-            vol_ma = df["volume"].rolling(window=20).mean().bfill()
+            vol_ma = df["volume"].rolling(window=20, min_periods=1).mean().bfill().fillna(1.0)
             df["volume_ratio"] = df["volume"] / (vol_ma + 1e-9)
         else:
             df["volume_ratio"] = 1.0
 
+        # VWAP Divergence
+        df["vwap_divergence"] = self.calculate_vwap_divergence(df)
+
         return df
+

@@ -56,7 +56,7 @@ async def predict_volatility(request: PredictRequest) -> PredictResponse:
         )
 
     # 1. Convert bars to DataFrame and compute technical indicators
-    bars_data = [b.dict() for b in request.ohlcv_bars]
+    bars_data = [b.model_dump() for b in request.ohlcv_bars]
     bars_df = pd.DataFrame(bars_data)
     features_df = _feature_engine.transform(bars_df)
 

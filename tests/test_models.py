@@ -60,3 +60,42 @@ def test_volatility_backtester():
     assert "strategy_metrics" in results
     assert "benchmark_metrics" in results
     assert len(results["strategy_equity"]) == len(prices) - 1
+
+
+def test_time_series_encoder_tcn():
+    from src.models.time_series_branch import TimeSeriesEncoder
+    tcn_encoder = TimeSeriesEncoder(input_dim=16, hidden_dim=128, model_type="tcn")
+    x = torch.randn(4, 78, 16)
+    out = tcn_encoder(x)
+    assert out.shape == (4, 78, 128)
+
+
+def test_random_forest_baseline():
+    X = np.random.normal(0, 1, size=(50, 16))
+    y = np.random.choice([0, 1], size=50)
+
+    trainer = BaselineModelTrainer("random_forest")
+    trainer.fit(X, y)
+    metrics = trainer.evaluate(X, y)
+    assert "roc_auc" in metrics
+    assert "pr_auc" in metrics
+
+
+def test_model_trainer_fit(tmp_path):
+    from torch.utils.data import DataLoader, TensorDataset
+    from src.models.trainer import ModelTrainer
+
+    model = MarketPulseNet(ts_input_dim=16, text_input_dim=768, hidden_dim=64)
+    trainer = ModelTrainer(model=model, learning_rate=0.001, early_stopping_patience=2, device="cpu")
+
+    ts_data = torch.randn(32, 78, 16)
+    text_data = torch.randn(32, 768)
+    y_data = torch.randint(0, 2, (32,)).float()
+
+    dataset = TensorDataset(ts_data, text_data, y_data)
+    loader = DataLoader(dataset, batch_size=16)
+
+    results = trainer.fit(train_loader=loader, val_loader=loader, epochs=3, checkpoint_dir=str(tmp_path))
+    assert "best_pr_auc" in results
+    assert "best_epoch" in results
+

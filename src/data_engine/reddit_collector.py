@@ -2,7 +2,7 @@
 Reddit PRAW sentiment and discussion scraper for financial subreddits.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import pandas as pd
 from src.config.settings import get_settings
@@ -90,7 +90,7 @@ class RedditCollector:
             symbol = random.choice(symbols)
             records.append({
                 "id": f"reddit_syn_{i}",
-                "timestamp": now - random.random() * random.randint(1, 300) * pd.Timedelta(minutes=1),
+                "timestamp": now - timedelta(minutes=random.randint(1, 300)),
                 "symbol": symbol,
                 "source": "reddit/r/wallstreetbets",
                 "text": f"${symbol} - {random.choice(headlines)}",

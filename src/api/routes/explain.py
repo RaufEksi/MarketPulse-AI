@@ -26,7 +26,7 @@ async def explain_prediction(request: ExplainRequest) -> ExplainResponse:
     decomp = _attribution_service.decompose_risk(
         text_attr_pct=65.0,
         ts_attr_pct=35.0,
-        top_technical_factors=[f.dict() for f in top_features[1:]],
+        top_technical_factors=[f.model_dump() for f in top_features[1:]],
         recent_headline="Antitrust regulatory investigation announced on key market constituents.",
     )
 

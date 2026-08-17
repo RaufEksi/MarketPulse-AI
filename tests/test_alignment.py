@@ -34,3 +34,18 @@ def test_sliding_window_builder():
     assert ts_win.shape == (n - 78, 78, 16)
     assert text_win.shape == (n - 78, 768)
     assert y_win.shape == (n - 78,)
+
+
+def test_walk_forward_dataloaders():
+    n = 50
+    ts_win = np.random.normal(0, 1, size=(n, 78, 16)).astype(np.float32)
+    text_win = np.random.normal(0, 1, size=(n, 768)).astype(np.float32)
+    y_win = np.random.choice([0.0, 1.0], size=n).astype(np.float32)
+
+    train_l, val_l, test_l = create_walk_forward_dataloaders(
+        ts_win, text_win, y_win, val_split=0.2, test_split=0.2, batch_size=8
+    )
+    assert len(train_l.dataset) == 30
+    assert len(val_l.dataset) == 10
+    assert len(test_l.dataset) == 10
+

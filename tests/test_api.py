@@ -47,3 +47,38 @@ def test_explain_endpoint():
     data = response.json()
     assert "risk_decomposition" in data
     assert len(data["top_features"]) == 3
+
+
+def test_predict_endpoint(sample_ohlcv_df):
+    bars_list = []
+    for _, row in sample_ohlcv_df.head(25).iterrows():
+        bars_list.append({
+            "timestamp": row["timestamp"].isoformat(),
+            "open": float(row["open"]),
+            "high": float(row["high"]),
+            "low": float(row["low"]),
+            "close": float(row["close"]),
+            "volume": float(row["volume"]),
+            "vwap": float(row["vwap"]),
+            "trade_count": int(row["trade_count"]),
+        })
+
+    payload = {
+        "symbol": "SPY",
+        "ohlcv_bars": bars_list,
+        "recent_texts": [
+            {
+                "timestamp": bars_list[-1]["timestamp"],
+                "headline": "Fed signals steady rate path amid economic expansion.",
+                "source": "news",
+            }
+        ],
+    }
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "prediction_id" in data
+    assert "volatility_spike_probability" in data
+    assert "risk_level" in data
+    assert 0.0 <= data["volatility_spike_probability"] <= 1.0
+

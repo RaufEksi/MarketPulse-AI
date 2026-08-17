@@ -51,6 +51,10 @@ data/processed/**/*.parquet
 data/cache/**/*
 src/models/weights/*.pt
 src/models/weights/*.pth
+models/
+models/**/*
+*.pt
+*.pth
 *.pkl
 *.joblib
 

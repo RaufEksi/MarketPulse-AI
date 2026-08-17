@@ -2,7 +2,7 @@
 NewsAPI & GDELT financial news and headline ingestion collector.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import pandas as pd
 import requests
@@ -82,7 +82,7 @@ class NewsCollector:
             symbol = random.choice(symbols)
             records.append({
                 "id": f"news_syn_{i}",
-                "timestamp": now - random.random() * random.randint(1, 400) * pd.Timedelta(minutes=1),
+                "timestamp": now - timedelta(minutes=random.randint(1, 400)),
                 "symbol": symbol,
                 "source": "news/Reuters",
                 "text": f"{symbol}: {random.choice(templates)}",

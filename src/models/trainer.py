@@ -19,7 +19,7 @@ logger = get_logger("ModelTrainer")
 
 class ModelTrainer:
     """
-    Manages end-to-end model training, validation, metric evaluation, and model serialization.
+    Manages end-to-end model training, validation, metric evaluation, early stopping, and model serialization.
     """
 
     def __init__(
@@ -28,12 +28,22 @@ class ModelTrainer:
         learning_rate: float = 0.0003,
         weight_decay: float = 0.0001,
         device: str = "cpu",
+        early_stopping_patience: Optional[int] = None,
     ):
+        settings = get_settings()
         self.model = model.to(device)
         self.device = device
+        self.early_stopping_patience = (
+            early_stopping_patience
+            if early_stopping_patience is not None
+            else settings.training.early_stopping_patience
+        )
         self.criterion = BinaryFocalLoss(alpha=0.75, gamma=2.0)
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+        )
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, T_max=settings.training.epochs, eta_min=1e-6
         )
 
     def train_epoch(self, train_loader: DataLoader) -> float:
@@ -56,6 +66,7 @@ class ModelTrainer:
 
             total_loss += loss.item() * len(y_batch)
 
+        self.scheduler.step()
         return total_loss / len(train_loader.dataset)
 
     def evaluate(self, val_loader: DataLoader) -> Dict[str, float]:
@@ -107,12 +118,13 @@ class ModelTrainer:
         checkpoint_dir: str = "models/checkpoints",
     ) -> Dict[str, Any]:
         """
-        Execute full training loop with checkpointing based on best validation PR-AUC.
+        Execute full training loop with checkpointing and early stopping.
         """
         checkpoint_path = Path(checkpoint_dir)
         checkpoint_path.mkdir(parents=True, exist_ok=True)
         best_pr_auc = -1.0
         best_epoch = 0
+        patience_counter = 0
 
         for epoch in range(1, epochs + 1):
             train_loss = self.train_epoch(train_loader)
@@ -126,9 +138,19 @@ class ModelTrainer:
             if val_metrics["pr_auc"] > best_pr_auc:
                 best_pr_auc = val_metrics["pr_auc"]
                 best_epoch = epoch
+                patience_counter = 0
                 torch.save(
                     self.model.state_dict(), checkpoint_path / "best_marketpulse_net.pt"
                 )
+            else:
+                patience_counter += 1
+                if patience_counter >= self.early_stopping_patience:
+                    logger.info(
+                        f"Early stopping triggered at epoch {epoch}. "
+                        f"No improvement for {self.early_stopping_patience} consecutive epochs."
+                    )
+                    break
 
         logger.info(f"Training completed. Best PR-AUC: {best_pr_auc:.4f} at epoch {best_epoch}")
         return {"best_pr_auc": best_pr_auc, "best_epoch": best_epoch}
+
