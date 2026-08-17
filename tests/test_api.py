@@ -82,3 +82,40 @@ def test_predict_endpoint(sample_ohlcv_df):
     assert "risk_level" in data
     assert 0.0 <= data["volatility_spike_probability"] <= 1.0
 
+
+def test_explain_endpoint_with_custom_bars(sample_ohlcv_df):
+    bars_list = []
+    for _, row in sample_ohlcv_df.head(25).iterrows():
+        bars_list.append({
+            "timestamp": row["timestamp"].isoformat(),
+            "open": float(row["open"]),
+            "high": float(row["high"]),
+            "low": float(row["low"]),
+            "close": float(row["close"]),
+            "volume": float(row["volume"]),
+            "vwap": float(row["vwap"]),
+            "trade_count": int(row["trade_count"]),
+        })
+
+    payload = {
+        "prediction_id": "mp-custom-456",
+        "symbol": "SPY",
+        "top_k_features": 4,
+        "ohlcv_bars": bars_list,
+        "recent_texts": [
+            {
+                "timestamp": bars_list[-1]["timestamp"],
+                "headline": "Tech earnings surprise to the upside with massive cloud growth.",
+                "source": "news",
+            }
+        ],
+    }
+    response = client.post("/explain", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "risk_decomposition" in data
+    assert len(data["top_features"]) <= 4
+    assert "news_sentiment_pct" in data["risk_decomposition"]
+    assert "technical_indicators_pct" in data["risk_decomposition"]
+
+

@@ -28,12 +28,20 @@ class IntegratedGradientsExplainer:
         ts_input: torch.Tensor,     # [1, 78, 16]
         text_input: torch.Tensor,   # [1, 768]
         steps: int = 20,
+        feature_names: Optional[list[str]] = None,
     ) -> Dict[str, Any]:
         """
         Compute path-integral gradient attributions from zero-baseline.
+        Also extracts Cross-Attention weights and per-feature importance.
         """
         ts_input = ts_input.to(self.device).requires_grad_(True)
         text_input = text_input.to(self.device).requires_grad_(True)
+
+        # Extract Cross-Attention weights from forward pass
+        with torch.no_grad():
+            _, attn_weights = self.model(ts_input, text_input)
+            # attn_weights shape: [Batch, 1, Seq_Len]
+            attention_map = attn_weights.squeeze().cpu().numpy().tolist()
 
         ts_baseline = torch.zeros_like(ts_input)
         text_baseline = torch.zeros_like(text_input)
@@ -67,8 +75,23 @@ class IntegratedGradientsExplainer:
         total_text_score = float(np.sum(np.abs(text_attr)))
         total_score = total_ts_score + total_text_score + 1e-9
 
+        # Sum attributions across sequence timesteps for each technical feature [16]
+        raw_feature_attr = np.sum(np.abs(ts_attr), axis=1).squeeze(0)  # [16]
+        feat_total = float(np.sum(raw_feature_attr)) + 1e-9
+
+        feature_importance_dict = {}
+        if feature_names and len(feature_names) == len(raw_feature_attr):
+            for name, val in zip(feature_names, raw_feature_attr):
+                feature_importance_dict[name] = float(val / feat_total)
+        else:
+            for idx, val in enumerate(raw_feature_attr):
+                feature_importance_dict[f"feature_{idx}"] = float(val / feat_total)
+
         return {
-            "time_series_attribution_pct": (total_ts_score / total_score) * 100.0,
-            "sentiment_text_attribution_pct": (total_text_score / total_score) * 100.0,
+            "time_series_attribution_pct": round((total_ts_score / total_score) * 100.0, 2),
+            "sentiment_text_attribution_pct": round((total_text_score / total_score) * 100.0, 2),
             "ts_time_step_importance": np.sum(np.abs(ts_attr), axis=2).squeeze(0).tolist(),
+            "attention_weights": attention_map,
+            "feature_attributions": feature_importance_dict,
         }
+

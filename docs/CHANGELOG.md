@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-08-17
+
+### Added — Sprint 5: Explainable AI (XAI) & Attribution Layer
+- **Integrated Gradients & Cross-Attention Extraction** (`src/xai_explainer/integrated_gradients.py`): Path-integral attribution for time-series features and NLP embeddings, extracting multi-head cross-attention heatmap weights and per-feature importance rankings
+- **SHAP Feature Explainer** (`src/xai_explainer/shap_explainer.py`): Model-agnostic and PyTorch probability explainer for 16 standardized technical indicators with dynamic ranking
+- **Risk Factor Decomposition Service** (`src/xai_explainer/attribution_service.py`): Automated mathematical synthesis translating attributions into institutional percentage shares and natural language risk narratives
+- **Dynamic FastAPI `/explain` Endpoint** (`src/api/routes/explain.py`): Connected active deep learning model and XAI explainers to serve live on-demand explanations for incoming OHLCV bars and text headlines
+- **Test Suite Expansion**: 30 automated unit & integration tests achieving **87% overall code coverage**
+
+---
+
 ## [0.4.0] - 2026-08-17
 
 ### Added — Sprint 4: ML Baselines & Hybrid Deep Learning Architecture

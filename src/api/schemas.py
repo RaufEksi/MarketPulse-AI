@@ -47,8 +47,10 @@ class PredictResponse(BaseModel):
 
 class ExplainRequest(BaseModel):
     prediction_id: str
-    symbol: str
+    symbol: str = "SPY"
     top_k_features: int = 5
+    ohlcv_bars: Optional[List[OHLCVBar]] = None
+    recent_texts: Optional[List[SentimentEvent]] = None
 
 
 class TopFeature(BaseModel):

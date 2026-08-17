@@ -1,8 +1,8 @@
 # MarketPulse AI — Sprint Status Tracker 📊
 
 > **Last Updated**: 2026-08-17  
-> **Current Sprint**: Sprint 5 — Explainable AI (XAI) & Attribution  
-> **Overall Progress**: Sprint 1 ✅ | Sprint 2 ✅ | Sprint 3 ✅ | Sprint 4 ✅ | Sprint 5 🔄 In Progress
+> **Current Sprint**: Sprint 6 — Production FastAPI Backend & Dashboard Integration  
+> **Overall Progress**: Sprint 1 ✅ | Sprint 2 ✅ | Sprint 3 ✅ | Sprint 4 ✅ | Sprint 5 ✅ | Sprint 6 🔄 In Progress
 
 ---
 
@@ -79,15 +79,15 @@
 
 ---
 
-## Sprint 5: Explainable AI (XAI) & Attribution 🔄
+## Sprint 5: Explainable AI (XAI) & Attribution ✅
 **Duration**: 2026-09-01 → 2026-09-07  
-**Status**: 🔄 IN PROGRESS
+**Status**: ✅ COMPLETED
 
 | Issue | Title | Status | Notes |
 |-------|-------|--------|-------|
-| #5-1 | SHAP Feature Importance Explainer | ✅ Done | `src/xai_explainer/shap_explainer.py` — tested |
-| #5-2 | Captum Integrated Gradients | ✅ Done | `src/xai_explainer/integrated_gradients.py` — tested |
-| #5-3 | Risk Factor Decomposition Service | ✅ Done | `src/xai_explainer/attribution_service.py` — tested |
+| #5-1 | SHAP Feature Importance Explainer | ✅ Done | `src/xai_explainer/shap_explainer.py` (PyTorch & tabular SHAP ranking) |
+| #5-2 | Captum Integrated Gradients | ✅ Done | `src/xai_explainer/integrated_gradients.py` (Cross-Attention & path integrals) |
+| #5-3 | Risk Factor Decomposition Service | ✅ Done | `src/xai_explainer/attribution_service.py` (narrative & percentage breakdown) |
 
 ---
 
@@ -99,7 +99,7 @@
 |-------|-------|--------|-------|
 | #6-1 | FastAPI App Skeleton & Schemas | ✅ Done | `src/api/main.py` + `src/api/schemas.py` |
 | #6-2 | /predict Endpoint | ✅ Done | `src/api/routes/predict.py` (integrated & tested) |
-| #6-3 | /explain Endpoint | ✅ Done | `src/api/routes/explain.py` (tested) |
+| #6-3 | /explain Endpoint | ✅ Done | `src/api/routes/explain.py` (dynamic XAI & tested) |
 | #6-4 | /backtest Endpoint | ✅ Done | `src/api/routes/backtest.py` (tested) |
 | #6-5 | Prometheus Metrics & Health | ✅ Done | `src/api/routes/health.py` (tested) |
 
@@ -126,7 +126,7 @@
 | Issue | Title | Status | Notes |
 |-------|-------|--------|-------|
 | #8-1 | Technical Documentation Suite | ✅ Done | Architecture, Model Design, Data Pipeline, Roadmap, Issues |
-| #8-2 | Comprehensive Test Suite | ✅ Done | 27/27 tests passing, **86% code coverage** |
+| #8-2 | Comprehensive Test Suite | ✅ Done | 30/30 tests passing, **87% code coverage** |
 | #8-3 | K8s Manifests & Helm Charts | ⬜ TODO | `deploy/kubernetes/` |
 
 ---
@@ -137,7 +137,7 @@
 |------|-------------|----------|------------|
 | 2026-08-17 | Python 3.14 + `requirements.txt` incompatibility | 🟢 Resolved | Python 3.11 environment configured with `uv`, requirements modernized |
 | 2026-08-17 | Issue #2-6 deferred items (manifest, retention) | 🟡 Medium | Scheduled for Sprint 8 |
-| 2026-08-17 | Missing tests & unverified end-to-end pipelines | 🟢 Resolved | 27 automated tests implemented, 86% coverage achieved |
+| 2026-08-17 | Missing tests & unverified end-to-end pipelines | 🟢 Resolved | 30 automated tests implemented, 87% coverage achieved |
 
 ---
 
@@ -146,9 +146,10 @@
 | Metric | Value |
 |--------|-------|
 | Total Issues | 33 |
-| ✅ Completed | 27 |
-| 🔄 In Progress / Scaffolded | 5 |
+| ✅ Completed | 30 |
+| 🔄 In Progress / Scaffolded | 2 |
 | ⬜ TODO | 1 |
-| Test Coverage | **86%** (27/27 unit & integration tests passing) |
-| Current Focus | Sprint 5 & Sprint 7 polishing |
+| Test Coverage | **87%** (30/30 unit & integration tests passing) |
+| Current Focus | Sprint 6 & Sprint 7 dashboard polishing |
+
 
