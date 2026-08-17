@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketpulse-dashboard
+  labels:
+    app: marketpulse-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marketpulse-dashboard
+  template:
+    metadata:
+      labels:
+        app: marketpulse-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: marketpulse-dashboard:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8501
+        env:
+        - name: API_BASE_URL
+          value: "http://marketpulse-api-service:8000"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"

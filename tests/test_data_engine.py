@@ -75,3 +75,12 @@ def test_storage_manager_lifecycle(tmp_path: Path):
 
     loaded_proc = storage.load_processed_dataset("test_dataset")
     assert len(loaded_proc) == 1
+
+    # Manifest generation
+    manifest_path = storage.save_manifest({"symbol": "SPY", "records": 100})
+    assert manifest_path.exists()
+
+    # Retention policy test
+    cleaned = storage.clean_retention_policy(max_age_days=10)
+    assert isinstance(cleaned, int)
+

@@ -50,13 +50,48 @@ class StorageManager:
             return pd.DataFrame()
         return pd.read_parquet(file_path, engine="pyarrow")
 
-    def save_processed_dataset(self, df: pd.DataFrame, filename: str) -> Path:
+    def save_manifest(self, metadata: dict, manifest_name: Optional[str] = None) -> Path:
         """
-        Save aligned & feature-engineered dataset.
+        Save dataset ingestion manifest metadata JSON.
+        """
+        import json
+        from datetime import datetime, timezone
+        now_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        name = manifest_name or f"{now_str}_manifest.json"
+        manifest_path = self.raw_dir / name
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2, default=str)
+        logger.info(f"Saved dataset manifest to {manifest_path}")
+        return manifest_path
+
+    def clean_retention_policy(self, max_age_days: int = 365) -> int:
+        """
+        Clean up files older than max_age_days rolling window.
+        """
+        import time
+        now_ts = time.time()
+        max_age_seconds = max_age_days * 86400
+        removed_count = 0
+
+        for path in self.raw_dir.glob("**/*"):
+            if path.is_file() and not path.name.endswith("_manifest.json"):
+                file_age = now_ts - path.stat().st_mtime
+                if file_age > max_age_seconds:
+                    path.unlink()
+                    removed_count += 1
+                    logger.info(f"Retention policy removed expired file: {path}")
+
+        return removed_count
+
+    def save_processed_dataset(
+        self, df: pd.DataFrame, filename: str, compression: str = "snappy"
+    ) -> Path:
+        """
+        Save aligned & feature-engineered dataset with PyArrow compression.
         """
         file_path = self.processed_dir / f"{filename}.parquet"
-        df.to_parquet(file_path, index=False, engine="pyarrow")
-        logger.info(f"Saved processed dataset ({len(df)} rows) to {file_path}")
+        df.to_parquet(file_path, index=False, engine="pyarrow", compression=compression)
+        logger.info(f"Saved processed dataset ({len(df)} rows, {compression}) to {file_path}")
         return file_path
 
     def load_processed_dataset(self, filename: str) -> pd.DataFrame:
@@ -67,3 +102,4 @@ class StorageManager:
         if not file_path.exists():
             raise FileNotFoundError(f"Processed dataset not found: {file_path}")
         return pd.read_parquet(file_path, engine="pyarrow")
+
