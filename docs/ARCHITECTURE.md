@@ -1,10 +1,10 @@
-# MarketPulse AI - System Architecture 🏛️
+# MarketPulse AI — System Architecture
 
 MarketPulse AI is an enterprise-grade multi-modal artificial intelligence system designed to predict short-term financial volatility spikes ($\ge 15\%$ ATR expansion over 30 minutes) by fusing high-frequency market micro-structure with unstructured NLP sentiment signals.
 
 ---
 
-## 🌐 End-to-End Architecture Diagram
+## End-to-End Architecture Diagram
 
 ```mermaid
 flowchart TB
@@ -53,7 +53,7 @@ flowchart TB
 
 ---
 
-## 🧩 Architectural Layers & Responsibilities
+## Architectural Layers & Responsibilities
 
 ### 1. Data Ingestion Layer (`src/data_engine/`)
 - Asynchronously queries market data from Alpaca Markets with automatic fallback to Yahoo Finance.

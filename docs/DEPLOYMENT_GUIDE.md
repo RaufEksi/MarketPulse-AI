@@ -1,4 +1,4 @@
-# MarketPulse AI - Deployment Guide 🚢
+# MarketPulse AI — Deployment Guide
 
 This guide covers local development, Docker containerization, Kubernetes orchestration, and monitoring setup for **MarketPulse AI**.
 

@@ -1,4 +1,4 @@
-# MarketPulse AI - Model Architecture & Design 🧠
+# MarketPulse AI — Model Architecture & Design
 
 This document details the hybrid deep learning architecture, attention fusion mechanisms, and loss functions powering **MarketPulse AI**.
 

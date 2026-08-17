@@ -1,4 +1,4 @@
-# MarketPulse AI - REST API Reference 🔌
+# MarketPulse AI — REST API Reference
 
 MarketPulse AI exposes high-performance asynchronous REST endpoints built on FastAPI.
 
@@ -6,7 +6,7 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs`.
 
 ---
 
-## 🚀 Endpoints Summary
+## Endpoints Summary
 
 | Method | Path | Description |
 |---|---|---|
@@ -18,7 +18,7 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs`.
 
 ---
 
-## 📌 Detailed Endpoint Specs
+## Detailed Endpoint Specifications
 
 ### 1. `POST /predict`
 

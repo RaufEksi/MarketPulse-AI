@@ -1,10 +1,10 @@
-# MarketPulse AI 📊
+# MarketPulse AI
 
 **Multi-Modal Financial Volatility & Market Regime Shift Prediction System**
 
 MarketPulse AI is an end-to-end explainable hybrid deep learning system that predicts short-term volatility spikes and market regime breaks by fusing real-time market data with financial sentiment signals.
 
-## 🎯 Core Objective
+## Core Objective
 
 Instead of predicting directional movement (up/down), MarketPulse AI focuses on **volatility forecasting**: predicting whether the next 30 minutes will experience a significant volatility spike (≥15% ATR increase) by combining:
 
@@ -13,7 +13,7 @@ Instead of predicting directional movement (up/down), MarketPulse AI focuses on 
 - **Deep Learning**: Bi-LSTM/TCN encoders + Multi-head Cross-Attention Fusion
 - **Explainability**: SHAP, Integrated Gradients, Attention Visualization
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10+
@@ -51,7 +51,7 @@ docker-compose up -d
 # API Docs: http://localhost:8000/docs
 ```
 
-## 📋 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -65,7 +65,7 @@ docker-compose up -d
 | **DevOps** | Docker, Kubernetes, Terraform |
 | **Monitoring** | Prometheus, Grafana, AlertManager |
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 MarketPulse-AI/
@@ -93,7 +93,7 @@ MarketPulse-AI/
 └── README.md                     # This file
 ```
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ```
 Raw Data (Alpaca, Reddit, GDELT)
@@ -115,7 +115,7 @@ Raw Data (Alpaca, Reddit, GDELT)
 
 For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## 📖 Key Concepts
+## Key Concepts
 
 ### Target Variable: ATR Volatility Spike
 
@@ -144,7 +144,7 @@ Where `λ` controls the decay rate (default: 0.5 per hour). Recent events have s
 3. **Fusion Layer**: Multi-head Cross-Attention
 4. **Classification Head**: Binary sigmoid (spike or no spike)
 
-## 🔍 API Endpoints
+## API Endpoints
 
 ### `/predict` (POST)
 Real-time volatility spike prediction.
@@ -177,7 +177,7 @@ System status & data freshness.
 
 For complete API documentation, visit: http://localhost:8000/docs (Swagger UI)
 
-## 📊 Dashboard Pages
+## Dashboard Pages
 
 - **Real-Time Monitor**: Live predictions & confidence bands
 - **Explainability Explorer**: SHAP waterfall, attention heatmaps
@@ -185,7 +185,7 @@ For complete API documentation, visit: http://localhost:8000/docs (Swagger UI)
 - **Data Explorer**: OHLCV visualization, sentiment trends
 - **System Health**: API latency, model drift, data pipeline status
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -200,7 +200,7 @@ pytest tests/test_models/test_architectures.py -v
 
 Target coverage: ≥80%
 
-## 📚 Documentation
+## Documentation
 
 - [Architecture Guide](docs/ARCHITECTURE.md)
 - [Data Pipeline](docs/DATA_PIPELINE.md)
@@ -210,19 +210,19 @@ Target coverage: ≥80%
 - [Contributing](CONTRIBUTING.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 
-## 🤝 Contributing
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, PR process, and code standards.
 
-## 📜 License
+## License
 
 MIT License - See [LICENSE](LICENSE) file.
 
-## 👨‍💼 Project Lead
+## Project Lead
 
 **Role**: Senior FinTech AI Architect & Lead MLOps Engineer
 
-## 🎓 References
+## References
 
 Key papers & resources:
 - LSTM Time Series Forecasting (Hochreiter & Schmidhuber)
@@ -233,5 +233,5 @@ Key papers & resources:
 
 ---
 
-**Status**: 🚀 In Active Development  
+**Status**: In Active Development  
 **Last Updated**: 2026-07-25

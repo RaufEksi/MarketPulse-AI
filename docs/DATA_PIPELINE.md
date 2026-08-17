@@ -1,4 +1,4 @@
-# MarketPulse AI - Data Pipeline & Feature Engineering Guide 📊
+# MarketPulse AI — Data Pipeline & Feature Engineering Guide
 
 This document details the data ingestion, preprocessing, temporal alignment formulas, and dataset construction mechanisms in MarketPulse AI.
 

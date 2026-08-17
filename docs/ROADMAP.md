@@ -1,10 +1,10 @@
-# MarketPulse AI - Project Roadmap & Milestones 🗺️
+# MarketPulse AI — Project Roadmap & Milestones
 
 This document outlines the phased development roadmap for **MarketPulse AI: Multi-Modal Financial Volatility & Market Regime Shift Prediction System**.
 
 ---
 
-## 📅 Roadmap Overview
+## Roadmap Overview
 
 ```mermaid
 gantt
@@ -26,7 +26,7 @@ gantt
 
 ---
 
-## 🏃 Detailed Sprint Breakdown
+## Detailed Sprint Breakdown
 
 ### **Sprint 1: Infrastructure, Config & DevOps Engine**
 - **Duration**: Week 1

@@ -1,4 +1,4 @@
-# MarketPulse AI - Troubleshooting & FAQ 🛠️
+# MarketPulse AI — Troubleshooting & FAQ
 
 This document provides diagnostic solutions for common configuration, data ingestion, GPU acceleration, and inference challenges.
 

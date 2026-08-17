@@ -238,4 +238,4 @@ Open a [GitHub Discussion](https://github.com/RaufEksi/MarketPulse-AI/discussion
 
 ---
 
-**Happy Contributing! 🚀**
+**Happy Contributing!**

@@ -1,10 +1,10 @@
-# MarketPulse AI - Granular Issue & Task Catalog 📋
+# MarketPulse AI — Granular Issue & Task Catalog
 
 This document catalogues all 33 granular project issues organized across 8 Phases for **MarketPulse AI: Multi-Modal Financial Volatility & Market Regime Shift Prediction System**.
 
 ---
 
-## 🏗️ PHASE 1: Project Setup, Infrastructure & Environment
+## Phase 1: Project Setup, Infrastructure & Environment
 
 #### **Issue #1-1**
 **Title:** `[Infra] Configuration Management Engine with Pydantic & YAML`  
@@ -48,7 +48,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## 📡 PHASE 2: Data Ingestion & Storage Lake
+## Phase 2: Data Ingestion & Storage Lake
 
 #### **Issue #2-1**
 **Title:** `[Data] Alpaca Markets 5-Minute OHLCV Bar Collector`  
@@ -106,7 +106,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## ⚙️ PHASE 3: Feature Engineering & Temporal Alignment
+## Phase 3: Feature Engineering & Temporal Alignment
 
 #### **Issue #3-1**
 **Title:** `[Features] Time Series Feature Extraction (ATR, RSI, MACD, Bollinger Bands)`  
@@ -173,7 +173,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## 🧠 PHASE 4: ML Baselines & Hybrid Deep Learning
+## Phase 4: ML Baselines & Hybrid Deep Learning
 
 #### **Issue #4-1**
 **Title:** `[ML] HistGradientBoosting & RandomForest Baseline Classifiers`  
@@ -233,7 +233,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## 🔍 PHASE 5: Explainable AI (XAI) & Attribution
+## Phase 5: Explainable AI (XAI) & Attribution
 
 #### **Issue #5-1**
 **Title:** `[XAI] SHAP Feature Importance Explainer for Baseline & Time-Series Features`  
@@ -261,7 +261,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## 🚀 PHASE 6: Production FastAPI Backend
+## Phase 6: Production FastAPI Backend
 
 #### **Issue #6-1**
 **Title:** `[API] FastAPI Application Skeleton & Pydantic v2 Schemas`  
@@ -303,7 +303,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## 🖥️ PHASE 7: Streamlit Financial Terminal Dashboard
+## Phase 7: Streamlit Financial Terminal Dashboard
 
 #### **Issue #7-1**
 **Title:** `[Dashboard] Modern Dark Glassmorphic Dashboard Layout & Navigation`  
@@ -342,7 +342,7 @@ This document catalogues all 33 granular project issues organized across 8 Phase
 
 ---
 
-## 📦 PHASE 8: Documentation, Testing & Release
+## Phase 8: Documentation, Testing & Release
 
 #### **Issue #8-1**
 **Title:** `[Docs] Complete Technical Documentation Suite`  
