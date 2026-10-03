@@ -75,10 +75,13 @@ class BacktestRequest(BaseModel):
 
 class BacktestResponse(BaseModel):
     symbol: str
+    is_synthetic: bool = False
     strategy_metrics: Dict[str, float]
     benchmark_metrics: Dict[str, float]
     strategy_equity: List[float]
     benchmark_equity: List[float]
+    # Model spike probability for each simulated bar (one longer than the equity curves)
+    predicted_probabilities: List[float] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):

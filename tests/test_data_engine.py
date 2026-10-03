@@ -5,6 +5,7 @@ Unit tests for data engine connectors and storage manager.
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from src.data_engine.alpaca_connector import AlpacaDataCollector
@@ -25,6 +26,19 @@ def test_alpaca_synthetic_fallback():
     assert "volume" in df.columns
     assert "vwap" in df.columns
     assert df["symbol"].iloc[0] == "SPY"
+
+
+def test_alpaca_synthetic_fallback_differs_by_symbol():
+    collector = AlpacaDataCollector(api_key=None, secret_key=None)
+    start_time = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end_time = start_time + timedelta(days=1)
+
+    aapl = collector.fetch_5min_bars("AAPL", start_time, end_time)
+    msft = collector.fetch_5min_bars("MSFT", start_time, end_time)
+    aapl_again = collector.fetch_5min_bars("AAPL", start_time, end_time)
+
+    assert not np.allclose(aapl["close"], msft["close"])
+    assert np.allclose(aapl["close"], aapl_again["close"])
 
 
 def test_reddit_collector_synthetic():
