@@ -40,3 +40,9 @@ class XAIError(MarketPulseException):
     """Raised when SHAP, Integrated Gradients, or attribution calculation fails."""
 
     pass
+
+
+class APIClientError(MarketPulseException):
+    """Raised when the dashboard cannot reach or parse a MarketPulse REST API response."""
+
+    pass

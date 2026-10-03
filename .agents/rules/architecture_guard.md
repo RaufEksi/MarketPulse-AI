@@ -60,7 +60,7 @@ Aşağıdaki import'lar **hiçbir koşulda** yapılmamalıdır:
 |---|---|
 | `src/config/` | stdlib, pydantic, pyyaml |
 | `src/utils/` | stdlib, logging, prometheus_client |
-| `src/data_engine/` | `src.config`, `src.utils`, pandas, alpaca, praw, requests, pyarrow |
+| `src/data_engine/` | `src.config`, `src.utils`, pandas, alpaca, requests, pyarrow |
 | `src/feature_engineering/` | `src.config`, `src.utils`, `src.data_engine` (storage_manager), pandas, numpy, ta, transformers |
 | `src/data_alignment/` | `src.config`, `src.utils`, `src.feature_engineering`, pandas, numpy, torch (Dataset/DataLoader) |
 | `src/models/` | `src.config`, `src.utils`, `src.data_alignment`, torch, scikit-learn |

@@ -1,168 +1,45 @@
 """
-Explainability Explorer: SHAP waterfall & Risk Factor Decomposition Page.
+Explainability Explorer: SHAP feature attribution & Risk Factor Decomposition Page.
+
+Attributions come from POST /explain, run on the same bars and texts used for /predict.
 """
 
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.config.settings import get_settings
+from src.dashboard.components.api_client import fetch_explanation, show_api_error
+from src.utils.exceptions import APIClientError
+
+DEFAULT_TOP_K = 6
+MAX_TOP_K = 10
+
 st.title("🔍 Explainability Explorer (XAI)")
-st.caption("SHAP Feature Importance & Multi-Modal Factor Decomposition")
+st.caption("Feature Attribution & Multi-Modal Factor Decomposition")
 
-symbol = st.selectbox(
-    "Select Asset Symbol for XAI Attribution",
-    ["NVDA", "TSLA", "AAPL", "SPY", "QQQ", "MSFT"],
-    index=0,
+col_sym, col_k = st.columns([2, 1])
+with col_sym:
+    symbol = st.selectbox(
+        "Select Asset Symbol for XAI Attribution", get_settings().data.symbols, index=0
+    )
+with col_k:
+    top_k = st.slider("Top Features", 3, MAX_TOP_K, DEFAULT_TOP_K)
+
+try:
+    with st.spinner(f"Requesting {symbol} prediction and explanation from the API..."):
+        result = fetch_explanation(symbol, top_k)
+except APIClientError as e:
+    show_api_error(e)
+
+prediction = result["snapshot"]["prediction"]
+explanation = result["explanation"]
+decomp = explanation["risk_decomposition"]
+
+st.markdown(
+    f"Explaining prediction `{prediction['prediction_id']}`: "
+    f"**{prediction['volatility_spike_probability']*100:.1f}%** spike probability "
+    f"({prediction['risk_level']})."
 )
-
-# Asset-specific XAI attribution profiles
-XAI_PROFILES = {
-    "NVDA": {
-        "news_pct": 68.0,
-        "tech_pct": 32.0,
-        "labels": [
-            "Breaking News / Sentiment Shock",
-            "Rolling Volatility 12-Bar",
-            "Volume Surge Ratio",
-            "RSI Divergence",
-        ],
-        "values": [68.0, 16.0, 10.0, 6.0],
-        "headline": "DOJ expands antitrust inquiry into AI hardware accelerator supply agreements.",
-        "source": "Reuters Financial",
-        "finbert_score": -0.912,
-        "cross_attn": 0.784,
-        "shap_features": [
-            "FinBERT Negative Sentiment",
-            "Rolling Volatility 12-Bar",
-            "Volume / 20-SMA Ratio",
-            "Bollinger Bandwidth Expansion",
-            "RSI(14) Divergence",
-            "MACD Histogram Decay",
-        ],
-        "shap_vals": [0.42, 0.24, 0.18, 0.12, -0.08, -0.04],
-    },
-    "TSLA": {
-        "news_pct": 58.0,
-        "tech_pct": 42.0,
-        "labels": [
-            "CEO Social Sentiment Shock",
-            "RSI Overbought Momentum",
-            "Volume Surge Ratio",
-            "Rolling Volatility",
-        ],
-        "values": [58.0, 20.0, 14.0, 8.0],
-        "headline": "Global autonomous driving regulatory review timeline extended by NHTSA.",
-        "source": "Bloomberg News",
-        "finbert_score": -0.745,
-        "cross_attn": 0.692,
-        "shap_features": [
-            "FinBERT Negative Sentiment",
-            "RSI(14) Momentum Peak",
-            "Volume / 20-SMA Ratio",
-            "Rolling Volatility 12-Bar",
-            "VWAP Divergence",
-            "MACD Signal Cross",
-        ],
-        "shap_vals": [0.36, 0.28, 0.19, 0.14, 0.09, -0.06],
-    },
-    "SPY": {
-        "news_pct": 25.0,
-        "tech_pct": 75.0,
-        "labels": [
-            "Broad Market Momentum",
-            "ATR Volatility Baseline",
-            "Macro Fed Sentiment",
-            "Volume Distribution",
-        ],
-        "values": [45.0, 30.0, 25.0, 0.0],
-        "headline": "Fed maintains policy rate expectation amid stable labor statistics.",
-        "source": "Wall Street Journal",
-        "finbert_score": 0.120,
-        "cross_attn": 0.245,
-        "shap_features": [
-            "ATR(14) Baseline",
-            "RSI(14) Mean Reversion",
-            "Bollinger %B Width",
-            "Rolling Volatility 78-Bar",
-            "FinBERT Neutral Sentiment",
-            "Log Return Drift",
-        ],
-        "shap_vals": [0.12, 0.08, -0.06, 0.05, 0.02, -0.03],
-    },
-    "AAPL": {
-        "news_pct": 35.0,
-        "tech_pct": 65.0,
-        "labels": [
-            "Technical Support Test",
-            "Supply Chain News",
-            "RSI Neutral Oscillator",
-            "Volume Ratio",
-        ],
-        "values": [40.0, 35.0, 15.0, 10.0],
-        "headline": "Supply partners report steady quarterly component shipment orders.",
-        "source": "Nikkei Asia",
-        "finbert_score": 0.210,
-        "cross_attn": 0.312,
-        "shap_features": [
-            "VWAP Deviation",
-            "ATR(14) Compression",
-            "FinBERT Positive Sentiment",
-            "RSI(14) Neutral",
-            "MACD Histogram",
-            "Rolling Volatility",
-        ],
-        "shap_vals": [-0.14, -0.09, 0.08, 0.05, -0.04, 0.02],
-    },
-    "QQQ": {
-        "news_pct": 45.0,
-        "tech_pct": 55.0,
-        "labels": [
-            "Tech Sector Earnings Flow",
-            "Rolling Volatility 36-Bar",
-            "MACD Momentum Shift",
-            "RSI Overbought",
-        ],
-        "values": [45.0, 25.0, 18.0, 12.0],
-        "headline": "Cloud computing capital expenditures increase 14% year-over-year.",
-        "source": "Dow Jones Newswires",
-        "finbert_score": 0.415,
-        "cross_attn": 0.480,
-        "shap_features": [
-            "FinBERT Growth Sentiment",
-            "Rolling Volatility 36-Bar",
-            "MACD Signal Line",
-            "RSI(14) Expansion",
-            "Volume Ratio",
-            "ATR(14) Trend",
-        ],
-        "shap_vals": [0.22, 0.18, 0.14, 0.09, 0.05, -0.03],
-    },
-    "MSFT": {
-        "news_pct": 20.0,
-        "tech_pct": 80.0,
-        "labels": [
-            "Enterprise Software Valuation",
-            "Low ATR Volatility",
-            "Stable Cloud Demand",
-            "Volume Mean",
-        ],
-        "values": [50.0, 30.0, 20.0, 0.0],
-        "headline": "Enterprise security milestones achieved across commercial accounts.",
-        "source": "TechCrunch Enterprise",
-        "finbert_score": 0.380,
-        "cross_attn": 0.190,
-        "shap_features": [
-            "ATR(14) Low Volatility",
-            "VWAP Anchor",
-            "FinBERT Steady Sentiment",
-            "RSI(14) Balanced",
-            "MACD Line Stability",
-            "Rolling Volatility 12-Bar",
-        ],
-        "shap_vals": [-0.18, -0.12, -0.08, 0.05, -0.04, 0.01],
-    },
-}
-
-prof = XAI_PROFILES.get(symbol, XAI_PROFILES["SPY"])
 
 col_decomp1, col_decomp2 = st.columns([1, 1])
 
@@ -172,7 +49,7 @@ with col_decomp1:
         data=[
             go.Pie(
                 labels=["Technicals & Volatility Signals", "NLP Sentiment Signals"],
-                values=[prof["tech_pct"], prof["news_pct"]],
+                values=[decomp["technical_indicators_pct"], decomp["news_sentiment_pct"]],
                 hole=0.55,
                 marker=dict(colors=["#6366f1", "#f59e0b"]),
             )
@@ -187,39 +64,39 @@ with col_decomp1:
     st.plotly_chart(fig_pie, use_container_width=True)
 
 with col_decomp2:
-    st.markdown(f"### 📰 {symbol} Triggering Headline Signal")
-    sentiment_label = (
-        "Bearish (High Uncertainty)"
-        if prof["finbert_score"] < -0.3
-        else "Bullish (Stable Growth)" if prof["finbert_score"] > 0.3 else "Neutral"
-    )
-    focus_label = "High Model Focus" if prof["cross_attn"] > 0.5 else "Low Ambient Influence"
-    st.info(
-        f"**Source: {prof['source']} (Recent Stream)**\n\n"
-        f"*\"{prof['headline']}\"*\n\n"
-        f"- **FinBERT Sentiment Score:** `{prof['finbert_score']:.3f}` ({sentiment_label})\n"
-        f"- **Cross-Attention Weight:** `{prof['cross_attn']:.3f}` ({focus_label})"
-    )
+    st.markdown(f"### 📰 {symbol} Primary Driver")
+    headline = decomp.get("headline_context")
+    headline_md = f'*"{headline}"*\n\n' if headline else ""
+    st.info(f"**{decomp['primary_driver']}**\n\n" f"{headline_md}" f"{decomp['summary_narrative']}")
+    subcomponents = decomp.get("technical_subcomponents", {})
+    if subcomponents:
+        st.markdown("**Technical share breakdown (%)**")
+        st.dataframe(
+            [{"feature": k, "share_pct": v} for k, v in subcomponents.items()],
+            use_container_width=True,
+            hide_index=True,
+        )
 
 st.markdown("---")
-st.markdown(f"### 📊 {symbol} SHAP Feature Attribution Waterfall")
+st.markdown(f"### 📊 {symbol} Feature Attribution")
 
-shap_features = prof["shap_features"]
-shap_values = prof["shap_vals"]
+features = [f["feature"] for f in explanation["top_features"]]
+values = [f["shap_value"] for f in explanation["top_features"]]
 
 fig_bar = go.Figure(
     go.Bar(
-        x=shap_values,
-        y=shap_features,
+        x=values,
+        y=features,
         orientation="h",
-        marker=dict(color=["#ef4444" if v > 0 else "#10b981" for v in shap_values]),
+        marker=dict(color=["#ef4444" if v > 0 else "#10b981" for v in values]),
     )
 )
 fig_bar.update_layout(
-    title=f"Feature Impact on {symbol} Volatility Spike Log-Odds",
+    title=f"Feature Impact on {symbol} Volatility Spike Probability",
     height=350,
     template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis_title="SHAP Value (Positive = Escalates Risk, Negative = Calms Volatility)",
+    xaxis_title="Attribution (Positive = Escalates Risk, Negative = Calms Volatility)",
+    yaxis=dict(autorange="reversed"),
 )
 st.plotly_chart(fig_bar, use_container_width=True)

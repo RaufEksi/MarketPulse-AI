@@ -1,44 +1,54 @@
 """
 System Health, Monitoring & Latency Diagnostics Page.
+
+Status comes from GET /health and metrics from GET /metrics.
 """
 
-import numpy as np
-import plotly.graph_objects as go
+import pandas as pd
 import streamlit as st
+
+from src.dashboard.components.api_client import (
+    fetch_health,
+    fetch_metrics_text,
+    get_api_base_url,
+    parse_prometheus_text,
+    show_api_error,
+)
+from src.utils.exceptions import APIClientError
 
 st.title("🩺 System Health & Pipeline Observability")
 
+try:
+    health = fetch_health()
+    metrics_text = fetch_metrics_text()
+except APIClientError as e:
+    show_api_error(e)
+
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.success("🟢 **FastAPI Service:** Online (Port 8000)")
+    if health["status"] == "healthy":
+        st.success(f"🟢 **FastAPI Service:** {health['status']} ({get_api_base_url()})")
+    else:
+        st.warning(f"🟠 **FastAPI Service:** {health['status']} ({get_api_base_url()})")
 with col2:
-    st.success("🟢 **Alpaca Data Feed:** Synchronized")
+    st.info(f"**Active Model:** {health['active_model']}")
 with col3:
-    st.success("🟢 **FinBERT NLP Pipeline:** Healthy (GPU Ready)")
+    st.info(f"**API Version:** {health['version']}")
 
-st.markdown("---")
-st.markdown("### ⏱️ API Latency Distribution (Last 500 Requests)")
+st.caption(f"Last health check: {health['timestamp']}")
 
-latencies = np.random.normal(18.5, 3.2, size=500)
-fig_hist = go.Figure(data=[go.Histogram(x=latencies, nbinsx=30, marker=dict(color="#3b82f6"))])
-fig_hist.update_layout(
-    height=300,
-    margin=dict(l=10, r=10, t=10, b=10),
-    template="plotly_dark",
-    paper_bgcolor="rgba(0,0,0,0)",
-    xaxis_title="Inference Latency (ms)",
-    yaxis_title="Request Count",
+st.markdown("### 🔌 Data Pipeline Status")
+st.dataframe(
+    [{"component": k, "status": v} for k, v in health["data_pipeline_status"].items()],
+    use_container_width=True,
+    hide_index=True,
 )
-st.plotly_chart(fig_hist, use_container_width=True)
 
-st.markdown("### 📊 Active Model Specifications")
-st.code(
-    """
-Architecture: MarketPulseNet (Hybrid Bi-LSTM + FinBERT Cross-Attention)
-Time Series Sequence: 78 Bars (5-Min OHLCV + 11 Technical Indicators)
-Text Encoder: ProsusAI/finbert (768-D Embeddings with Exponential Decay lambda=0.5/hr)
-Loss Function: Binary Focal Loss (alpha=0.75, gamma=2.0)
-Serving Framework: FastAPI v0.104.1 + PyTorch v2.0.1
-    """,
-    language="yaml",
-)
+st.markdown("### 📊 Prometheus Metrics")
+rows = parse_prometheus_text(metrics_text)
+if rows:
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+else:
+    st.info("The API returned no metric samples.")
+with st.expander("Raw /metrics output"):
+    st.code(metrics_text, language="text")

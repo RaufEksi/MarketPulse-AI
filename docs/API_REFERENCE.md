@@ -15,6 +15,8 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs`.
 | `POST` | `/backtest` | Execute a historical strategy simulation against market benchmarks. |
 | `GET` | `/health` | System health, readiness, and data pipeline status. |
 | `GET` | `/metrics` | Prometheus metrics exporter. |
+| `GET` | `/market/bars` | Recent 5-min OHLCV bars with ATR(14) / RSI(14) for a symbol. |
+| `GET` | `/market/texts` | Recent news headlines and Reddit posts for a symbol, newest first. |
 
 ---
 
@@ -83,3 +85,27 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs`.
   ]
 }
 ```
+
+---
+
+### 3. `GET /market/bars`
+
+Query parameters: `symbol` (default `SPY`), `limit` (20–1000, default 78).
+
+Returns `{"symbol", "is_synthetic", "bars": [...]}`. Bars are ordered oldest to newest and
+carry the `OHLCVBar` fields plus `atr_14` and `rsi_14`. `is_synthetic` is `true` when the
+API has no Alpaca credentials and serves the connector's synthetic fallback. The
+`timestamp`/`open`/`high`/`low`/`close`/`volume` fields can be posted directly as
+`ohlcv_bars` to `/predict` and `/explain`.
+
+### 4. `GET /market/texts`
+
+Query parameters: `symbol` (default `SPY`), `limit` (1–100, default 20).
+
+Returns `{"symbol", "texts": [{"timestamp", "symbol", "source", "text", "score"}]}`, newest
+first. A failing source (News or Reddit) is logged and skipped. Map `text` to `headline` to
+use these as `recent_texts` for `/predict`.
+
+The Streamlit dashboard uses these two endpoints to build its `/predict` and `/explain`
+requests; set `MARKETPULSE_API_URL` to point the dashboard at a non-default API host.
+

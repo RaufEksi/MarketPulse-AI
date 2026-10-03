@@ -10,7 +10,7 @@ MarketPulse AI is an enterprise-grade multi-modal artificial intelligence system
 flowchart TB
     subgraph DataSources["1. Multi-Modal Data Ingestion Layer"]
         A1["Alpaca Markets API (5-Min OHLCV)"]
-        A2["Reddit PRAW (r/wallstreetbets, r/stocks)"]
+        A2["Reddit via Arctic Shift API (r/wallstreetbets, r/stocks, r/investing)"]
         A3["NewsAPI & GDELT Financial News"]
     end
 

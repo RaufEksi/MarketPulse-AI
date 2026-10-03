@@ -188,3 +188,43 @@ def test_predict_without_checkpoint_uses_untrained_model(tmp_path, monkeypatch):
         assert bundle.metadata["source"] == model_registry.UNTRAINED_MODEL_SOURCE
     finally:
         model_registry.reset_registry()
+
+
+def test_market_bars_endpoint():
+    response = client.get("/market/bars", params={"symbol": "spy", "limit": 30})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbol"] == "SPY"
+    assert len(data["bars"]) == 30
+    first = data["bars"][0]
+    for key in ("timestamp", "open", "high", "low", "close", "volume", "atr_14", "rsi_14"):
+        assert key in first
+    timestamps = [b["timestamp"] for b in data["bars"]]
+    assert timestamps == sorted(timestamps)
+
+
+def test_market_bars_rejects_too_few_bars():
+    response = client.get("/market/bars", params={"symbol": "SPY", "limit": 5})
+    assert response.status_code == 422
+
+
+def test_market_texts_endpoint():
+    response = client.get("/market/texts", params={"symbol": "NVDA", "limit": 7})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbol"] == "NVDA"
+    assert 0 < len(data["texts"]) <= 7
+    timestamps = [t["timestamp"] for t in data["texts"]]
+    assert timestamps == sorted(timestamps, reverse=True)
+
+
+def test_market_bars_feed_predict_endpoint():
+    bars = client.get("/market/bars", params={"symbol": "SPY", "limit": 78}).json()["bars"]
+    payload = {
+        "symbol": "SPY",
+        "ohlcv_bars": [
+            {k: b[k] for k in ("timestamp", "open", "high", "low", "close", "volume")} for b in bars
+        ],
+    }
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 200

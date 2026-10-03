@@ -19,7 +19,7 @@ Instead of predicting directional movement (up/down), MarketPulse AI focuses on 
 - Python 3.10+
 - Docker & Docker Compose (optional)
 - Alpaca Markets API key (get [here](https://alpaca.markets/))
-- Reddit PRAW credentials (get [here](https://www.reddit.com/prefs/apps))
+- No Reddit key needed: Reddit posts and comments come from the free [Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift) archive API
 
 ### Local Setup
 
