@@ -140,7 +140,8 @@ def load_bars(source: str, symbol: str, days: int) -> pd.DataFrame:
         DataIngestionError: If the source returns no bars.
     """
     settings = get_settings()
-    if source == "auto":
+    auto_selected = source == "auto"
+    if auto_selected:
         has_alpaca = bool(settings.alpaca_api_key and settings.alpaca_secret_key)
         source = "alpaca" if has_alpaca else "yfinance"
 
@@ -150,7 +151,15 @@ def load_bars(source: str, symbol: str, days: int) -> pd.DataFrame:
         period_days = min(days, YFINANCE_MAX_5MIN_DAYS)
         bars = YFinanceDataCollector().fetch_5min_bars(symbol, period=f"{period_days}d")
     elif source == "alpaca":
-        bars = AlpacaDataCollector().fetch_5min_bars(symbol, start_time, end_time, limit=10000)
+        try:
+            bars = AlpacaDataCollector().fetch_5min_bars(symbol, start_time, end_time, limit=10000)
+        except DataIngestionError as e:
+            if not auto_selected:
+                raise
+            # e.g. placeholder keys in .env -> 401; auto mode should still train
+            logger.warning(f"Alpaca failed ({e.message}); falling back to Yahoo Finance.")
+            period_days = min(days, YFINANCE_MAX_5MIN_DAYS)
+            bars = YFinanceDataCollector().fetch_5min_bars(symbol, period=f"{period_days}d")
     else:
         bars = AlpacaDataCollector()._generate_synthetic_bars(symbol, start_time, end_time)
 
