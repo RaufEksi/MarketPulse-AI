@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Reddit collector now uses Arctic Shift instead of PRAW** (`src/data_engine/reddit_collector.py`): Reddit closed self-service API app creation in Nov 2025, so `RedditCollector` reads posts and comments from the keyless Arctic Shift archive API, with time-window pagination and 429 handling. Comments are now collected too. Removed `REDDIT_CLIENT_ID`/`REDDIT_CLIENT_SECRET` and the `praw` dependency; synthetic mode is now `data.reddit_use_synthetic`.
+
 ---
 
 ## [1.0.0] - 2026-08-17

@@ -17,6 +17,12 @@ data:
   raw_dir: "data/raw"
   processed_dir: "data/processed"
   cache_dir: "data/cache"
+  # Reddit text comes from the Arctic Shift archive API (no key needed; Reddit
+  # closed self-service API app creation in Nov 2025).
+  reddit_api_base_url: "https://arctic-shift.photon-reddit.com"
+  reddit_subreddits: ["wallstreetbets", "stocks", "investing"]
+  reddit_request_timeout_s: 15.0
+  reddit_use_synthetic: false # true = offline synthetic posts instead of API calls
 
 nlp:
   finbert_model: "ProsusAI/finbert"

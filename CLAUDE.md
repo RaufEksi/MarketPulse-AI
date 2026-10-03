@@ -81,10 +81,15 @@ trusting a doc's checkmark on something you're about to build on top of.
 
 ## API keys
 
-No `.env` file exists yet — API keys (Alpaca, Reddit, NewsAPI) are **not** currently
+No `.env` file exists yet — API keys (Alpaca, NewsAPI) are **not** currently
 available. Per `docs/DEV_SETUP.md`, all data connectors have synthetic/mock fallbacks
 and tests mock external APIs, so this doesn't block development or testing. Don't
 assume real API keys are configured; don't write code that hard-fails without them.
+
+Reddit needs no key: Reddit closed self-service API app creation in Nov 2025, so
+`RedditCollector` reads from the public Arctic Shift archive API instead of PRAW
+(decided 2026-10-03 over the paid Xpoz API). Set `data.reddit_use_synthetic: true`
+in `config/default.yaml` for offline work.
 
 ## Dependency version drift
 

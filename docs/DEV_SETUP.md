@@ -119,8 +119,11 @@ nano .env  # or vim, code, etc.
 |----------|--------|-----------|
 | `ALPACA_API_KEY` | [Alpaca Markets](https://alpaca.markets/) | ✅ Yes (for real data) |
 | `ALPACA_SECRET_KEY` | Alpaca Markets | ✅ Yes (for real data) |
-| `REDDIT_CLIENT_ID` | [Reddit Apps](https://www.reddit.com/prefs/apps) | ⬜ Optional (for sentiment) |
-| `REDDIT_CLIENT_SECRET` | Reddit Apps | ⬜ Optional (for sentiment) |
+
+Reddit sentiment needs no key: `RedditCollector` reads posts and comments from the public
+[Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift) archive API (Reddit closed
+self-service API app creation in November 2025). Set `data.reddit_use_synthetic: true` in
+`config/default.yaml` to work fully offline.
 
 > [!TIP]
 > For initial development and testing, API keys are **optional**. The data connectors have offline synthetic fallback generators, and tests use mocked data.
