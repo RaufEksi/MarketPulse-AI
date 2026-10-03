@@ -142,9 +142,7 @@ class ModelTrainer:
                 best_pr_auc = val_metrics["pr_auc"]
                 best_epoch = epoch
                 patience_counter = 0
-                torch.save(
-                    self.model.state_dict(), checkpoint_path / "best_marketpulse_net.pt"
-                )
+                torch.save(self.model.state_dict(), checkpoint_path / "best_marketpulse_net.pt")
             else:
                 patience_counter += 1
                 if patience_counter >= self.early_stopping_patience:
