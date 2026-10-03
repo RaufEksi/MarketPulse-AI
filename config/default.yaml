@@ -49,6 +49,7 @@ model:
     dense_dim: 64
     dropout: 0.3
     num_classes: 2 # Binary classification (0: normal, 1: volatility spike)
+  checkpoint_path: "models/marketpulse_net.pt" # Written by scripts/train_model.py, loaded by the API
 
 training:
   batch_size: 64

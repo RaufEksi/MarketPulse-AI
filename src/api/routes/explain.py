@@ -9,10 +9,8 @@ import pandas as pd
 import torch
 from fastapi import APIRouter
 
+from src.api.model_registry import build_price_sequence, build_text_vector, get_model_bundle
 from src.api.schemas import ExplainRequest, ExplainResponse, TopFeature
-from src.data_alignment.exponential_decay import TemporalAligner
-from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
-from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
 from src.models.hybrid_network import MarketPulseNet
 from src.utils.logger import get_logger
 from src.xai_explainer.attribution_service import RiskAttributionService
@@ -23,8 +21,6 @@ logger = get_logger("ExplainRoute")
 router = APIRouter()
 
 _attribution_service = RiskAttributionService()
-_feature_engine = TechnicalFeatureEngine()
-_aligner = TemporalAligner()
 _model: Optional[MarketPulseNet] = None
 _ig_explainer: Optional[IntegratedGradientsExplainer] = None
 _shap_explainer: Optional[ShapExplainer] = None
@@ -32,9 +28,9 @@ _shap_explainer: Optional[ShapExplainer] = None
 
 def get_model_and_explainers():
     global _model, _ig_explainer, _shap_explainer
-    if _model is None:
-        _model = MarketPulseNet(ts_input_dim=16, text_input_dim=768, hidden_dim=128)
-        _model.eval()
+    model = get_model_bundle().model
+    if _model is not model:
+        _model = model
         _ig_explainer = IntegratedGradientsExplainer(_model, device="cpu")
         _shap_explainer = ShapExplainer(model=_model.predict_probability)
     return _model, _ig_explainer, _shap_explainer
@@ -51,32 +47,16 @@ async def explain_prediction(request: ExplainRequest) -> ExplainResponse:
     recent_headline = "Macroeconomic volatility indicator surge and option market imbalance."
     if request.ohlcv_bars and len(request.ohlcv_bars) >= 20:
         bars_df = pd.DataFrame([b.model_dump() for b in request.ohlcv_bars])
-        features_df = _feature_engine.transform(bars_df)
-        raw_features = features_df[DEFAULT_FEATURE_NAMES].fillna(0.0).values
-        if len(raw_features) < 78:
-            padding = np.repeat(raw_features[:1], 78 - len(raw_features), axis=0)
-            ts_seq = np.vstack([padding, raw_features])[-78:]
-        else:
-            ts_seq = raw_features[-78:]
+        ts_seq = build_price_sequence(bars_df, get_model_bundle())
         ts_tensor = torch.tensor(ts_seq, dtype=torch.float32).unsqueeze(0)
 
-        if request.recent_texts:
-            recent_headline = request.recent_texts[0].headline
-            embedder = FinBERTEmbedder()
-            text_strings = [t.headline for t in request.recent_texts]
-            embeddings = embedder.embed_texts(text_strings)
-            text_df = pd.DataFrame(
-                {
-                    "timestamp": [t.timestamp for t in request.recent_texts],
-                    "text": text_strings,
-                }
-            )
-            aligned_sentiment = _aligner.align_sentiment_to_bars(
-                bars_df.tail(1), text_df, embeddings
-            )
-            text_tensor = torch.tensor(aligned_sentiment, dtype=torch.float32)
-        else:
-            text_tensor = torch.zeros((1, 768), dtype=torch.float32)
+        texts = request.recent_texts or []
+        if texts:
+            recent_headline = texts[0].headline
+        text_vec = build_text_vector(
+            bars_df, [t.headline for t in texts], [t.timestamp for t in texts]
+        )
+        text_tensor = torch.tensor(text_vec, dtype=torch.float32)
     else:
         # Generate representative sequence for standard inference context
         np.random.seed(abs(hash(request.prediction_id)) % (2**32))

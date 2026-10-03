@@ -3,6 +3,7 @@ FinBERT sentiment and contextual embedding generator.
 Extracts 768-dimensional CLS token embeddings from financial texts.
 """
 
+import hashlib
 from typing import List, Optional
 
 import numpy as np
@@ -11,6 +12,8 @@ from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
 logger = get_logger("FinBERTEmbedder")
+
+FALLBACK_BACKEND = "hash-fallback"
 
 
 class FinBERTEmbedder:
@@ -32,13 +35,30 @@ class FinBERTEmbedder:
         self.embedding_dim = 768
         self._tokenizer = None
         self._model = None
+        self._load_failed = False
+
+    @property
+    def backend(self) -> str:
+        """
+        Name of the embedding backend in use, loading the model if needed.
+
+        Returns:
+            The Hugging Face model name, or ``"hash-fallback"`` when FinBERT is unavailable.
+        """
+        return self.model_name if self._lazy_load_model() else FALLBACK_BACKEND
 
     def _lazy_load_model(self) -> bool:
         if self._model is not None:
             return True
+        if self._load_failed:
+            return False
         try:
+            import torch
             from transformers import AutoModel, AutoTokenizer
 
+            if str(self.device).startswith("cuda") and not torch.cuda.is_available():
+                logger.warning(f"Device '{self.device}' unavailable; running FinBERT on CPU.")
+                self.device = "cpu"
             self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)  # nosec B615
             self._model = AutoModel.from_pretrained(self.model_name)  # nosec B615
             self._model.to(self.device)
@@ -48,6 +68,7 @@ class FinBERTEmbedder:
             logger.warning(
                 f"Could not load Hugging Face FinBERT ({str(e)}); using fallback embedder."
             )
+            self._load_failed = True
             return False
 
     def embed_texts(self, texts: List[str], batch_size: int = 32) -> np.ndarray:
@@ -85,7 +106,8 @@ class FinBERTEmbedder:
         """Deterministic pseudo-embedding for testing or offline environments."""
         embeddings = np.zeros((len(texts), self.embedding_dim), dtype=np.float32)
         for i, text in enumerate(texts):
-            seed = abs(hash(text)) % (2**32)
+            # Stable across processes (unlike hash()), so training and serving agree
+            seed = int.from_bytes(hashlib.sha256(text.encode("utf-8")).digest()[:4], "little")
             rng = np.random.RandomState(seed)
             embeddings[i] = rng.normal(0.0, 1.0, size=self.embedding_dim)
             # Normalize

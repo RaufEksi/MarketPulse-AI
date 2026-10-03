@@ -40,8 +40,8 @@ class CrossAttentionFusion(nn.Module):
 
     def forward(
         self,
-        text_emb: torch.Tensor,       # Query: [Batch, 1, Embed_Dim]
-        ts_features: torch.Tensor,    # Key/Value: [Batch, Seq_Len, Embed_Dim]
+        text_emb: torch.Tensor,  # Query: [Batch, 1, Embed_Dim]
+        ts_features: torch.Tensor,  # Key/Value: [Batch, Seq_Len, Embed_Dim]
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Returns:

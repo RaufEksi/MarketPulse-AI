@@ -71,6 +71,7 @@ class ModelSettings(BaseSettings):
     time_series: TimeSeriesModelSettings = TimeSeriesModelSettings()
     text_nlp: TextNLPModelSettings = TextNLPModelSettings()
     fusion: FusionModelSettings = FusionModelSettings()
+    checkpoint_path: str = "models/marketpulse_net.pt"
 
 
 class TrainingSettings(BaseSettings):

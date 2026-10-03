@@ -77,9 +77,7 @@ class MarketPulseNet(nn.Module):
 
         return logits.squeeze(-1), attn_weights
 
-    def predict_probability(
-        self, ts_input: torch.Tensor, text_input: torch.Tensor
-    ) -> torch.Tensor:
+    def predict_probability(self, ts_input: torch.Tensor, text_input: torch.Tensor) -> torch.Tensor:
         """Return sigmoid volatility spike probability (0.0 to 1.0)."""
         self.eval()
         with torch.no_grad():

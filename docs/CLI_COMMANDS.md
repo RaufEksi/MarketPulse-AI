@@ -48,12 +48,19 @@ Bu döküman, **MarketPulse AI** projesini çalıştırmak, eğitmek, simüle et
 
 ### 🧠 Multi-Modal PyTorch Model Eğitimi
 ```bash
-# 5 epoch ve 32 batch boyutu ile BiLSTM + FinBERT + Cross-Attention modelini eğitir
-.venv/bin/python scripts/train_model.py --epochs 5 --batch-size 32
+# SPY için 30 günlük 5 dk bar (Alpaca anahtarı yoksa Yahoo Finance) + Reddit/News metinleri,
+# FinBERT embedding'leriyle eğitir ve API'nin yüklediği checkpoint'i yazar:
+#   models/marketpulse_net.pt  (config: model.checkpoint_path)
+.venv/bin/python scripts/train_model.py --symbol SPY --epochs 10
 
-# TCN zaman serisi kodlayıcısı ile eğitmek için
-.venv/bin/python scripts/train_model.py --epochs 10 --batch-size 64 --lr 0.0005
+# Kendi metin arşivinle (id,timestamp,symbol,source,text,score,num_comments kolonları)
+.venv/bin/python scripts/train_model.py --text-file data/raw/texts.parquet --no-live-text
+
+# FinBERT indirilemiyorsa betik durur; çevrimdışı duman testi için hash embedding'e izin ver
+.venv/bin/python scripts/train_model.py --bars-source synthetic --days 3 --epochs 1 --allow-fallback-embeddings
 ```
+API, checkpoint yoksa eğitilmemiş modelle açılır ve log'a uyarı yazar; eğitimden sonra API'yi
+yeniden başlatın.
 
 ### 📈 Klasik ML vs Hibrit Derin Öğrenme Benchmark Kıyaslaması
 ```bash

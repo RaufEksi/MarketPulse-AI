@@ -2,6 +2,7 @@
 Integration tests for FastAPI REST endpoints.
 """
 
+import numpy as np
 from fastapi.testclient import TestClient
 
 from src.api.main import app
@@ -122,6 +123,71 @@ def test_explain_endpoint_with_custom_bars(sample_ohlcv_df):
     assert len(data["top_features"]) <= 4
     assert "news_sentiment_pct" in data["risk_decomposition"]
     assert "technical_indicators_pct" in data["risk_decomposition"]
+
+
+def test_predict_serves_trained_checkpoint(sample_ohlcv_df, tmp_path, monkeypatch):
+    import torch
+
+    from src.api import model_registry
+    from src.config.settings import get_settings
+    from src.models.checkpoint import save_checkpoint
+    from src.models.hybrid_network import MarketPulseNet
+
+    # Arrange: a checkpoint whose classifier bias forces a near-certain spike
+    config = {"ts_input_dim": 16, "text_input_dim": 768, "hidden_dim": 32, "num_heads": 4}
+    model = MarketPulseNet(**config)
+    with torch.no_grad():
+        model.classifier[-1].weight.zero_()
+        model.classifier[-1].bias.fill_(10.0)
+    ckpt = tmp_path / "trained.pt"
+    save_checkpoint(
+        model,
+        ckpt,
+        model_config=config,
+        feature_columns=model_registry.MODEL_FEATURE_COLUMNS,
+        feature_mean=np.zeros(16, dtype=np.float32),
+        feature_std=np.ones(16, dtype=np.float32),
+        metadata={"text_embedder": "hash-fallback"},
+    )
+    monkeypatch.setattr(get_settings().model, "checkpoint_path", str(ckpt))
+    model_registry.reset_registry()
+
+    bars = [
+        {
+            "timestamp": row["timestamp"].isoformat(),
+            "open": float(row["open"]),
+            "high": float(row["high"]),
+            "low": float(row["low"]),
+            "close": float(row["close"]),
+            "volume": float(row["volume"]),
+        }
+        for _, row in sample_ohlcv_df.head(25).iterrows()
+    ]
+
+    try:
+        # Act
+        response = client.post("/predict", json={"symbol": "SPY", "ohlcv_bars": bars})
+
+        # Assert
+        assert response.status_code == 200
+        assert response.json()["volatility_spike_probability"] > 0.99
+        assert response.json()["risk_level"] == "CRITICAL_VOLATILITY"
+        assert model_registry.get_model_bundle().metadata["source"] == str(ckpt)
+    finally:
+        model_registry.reset_registry()
+
+
+def test_predict_without_checkpoint_uses_untrained_model(tmp_path, monkeypatch):
+    from src.api import model_registry
+    from src.config.settings import get_settings
+
+    monkeypatch.setattr(get_settings().model, "checkpoint_path", str(tmp_path / "none.pt"))
+    model_registry.reset_registry()
+    try:
+        bundle = model_registry.get_model_bundle()
+        assert bundle.metadata["source"] == model_registry.UNTRAINED_MODEL_SOURCE
+    finally:
+        model_registry.reset_registry()
 
 
 def test_market_bars_endpoint():

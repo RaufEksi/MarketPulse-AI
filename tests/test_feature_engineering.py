@@ -44,3 +44,28 @@ def test_volatility_labeler(sample_ohlcv_df: pd.DataFrame):
     assert "atr_spike_target" in labeled.columns
     valid_labels = labeled["atr_spike_target"].dropna()
     assert set(valid_labels.unique()).issubset({0.0, 1.0})
+
+
+def test_fallback_embeddings_are_stable_across_processes():
+    """Hash-fallback embeddings must not depend on PYTHONHASHSEED (train vs. serve)."""
+    import os
+    import subprocess  # nosec B404
+    import sys
+
+    from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
+
+    code = (
+        "from src.feature_engineering.sentiment_embedder import FinBERTEmbedder;"
+        "print(FinBERTEmbedder()._fallback_embed(['Fed hikes rates'])[0, :3].tolist())"
+    )
+    outputs = set()
+    for seed in ("1", "2"):
+        env = {**os.environ, "PYTHONHASHSEED": seed}
+        result = subprocess.run(  # nosec B603
+            [sys.executable, "-c", code], capture_output=True, text=True, env=env, check=True
+        )
+        outputs.add(result.stdout.strip().splitlines()[-1])
+
+    local = FinBERTEmbedder()._fallback_embed(["Fed hikes rates"])[0, :3].tolist()
+    assert len(outputs) == 1
+    assert outputs.pop() == str(local)

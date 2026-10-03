@@ -9,16 +9,18 @@ import torch.nn as nn
 
 class Chomp1d(nn.Module):
     """Slices causal padding off the end of conv output."""
+
     def __init__(self, chomp_size: int):
         super().__init__()
         self.chomp_size = chomp_size
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x[:, :, :-self.chomp_size].contiguous()
+        return x[:, :, : -self.chomp_size].contiguous()
 
 
 class TemporalBlock(nn.Module):
     """Residual causal dilated convolution block for TCN."""
+
     def __init__(
         self,
         in_channels: int,
@@ -55,13 +57,17 @@ class TemporalBlock(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
 
         self.net = nn.Sequential(
-            self.conv1, self.chomp1, self.relu1, self.dropout1,
-            self.conv2, self.chomp2, self.relu2, self.dropout2,
+            self.conv1,
+            self.chomp1,
+            self.relu1,
+            self.dropout1,
+            self.conv2,
+            self.chomp2,
+            self.relu2,
+            self.dropout2,
         )
         self.downsample = (
-            nn.Conv1d(in_channels, out_channels, 1)
-            if in_channels != out_channels
-            else None
+            nn.Conv1d(in_channels, out_channels, 1) if in_channels != out_channels else None
         )
         self.relu = nn.GELU()
 

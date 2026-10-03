@@ -10,6 +10,26 @@ from src.utils.logger import get_logger
 
 logger = get_logger("TechnicalFeatureEngine")
 
+# Ordered time-series inputs consumed by MarketPulseNet (ts_input_dim = 16)
+MODEL_FEATURE_COLUMNS = [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume_ratio",
+    "log_return",
+    "atr_14",
+    "rsi_14",
+    "macd_line",
+    "macd_signal",
+    "macd_hist",
+    "bb_pct_b",
+    "bb_bandwidth",
+    "rolling_vol_12",
+    "rolling_vol_36",
+    "rolling_vol_78",
+]
+
 
 class TechnicalFeatureEngine:
     """
