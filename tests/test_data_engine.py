@@ -83,9 +83,16 @@ def test_reddit_collector_arctic_shift_posts_and_comments():
             "num_comments": 0,
         },
     ]
-    comments = [{"id": "c1", "created_utc": 1759495000, "body": "Bought NVDA puts", "score": 7}]
+    p1_comments = [
+        {"id": "c1", "created_utc": 1759495000, "body": "Bought puts on this", "score": 7},
+        {"id": "c2", "created_utc": 1759495100, "body": "[deleted]", "score": 1},
+    ]
     session = MagicMock()
-    session.get.side_effect = [_response(200, posts), _response(200, comments)]
+    session.get.side_effect = [
+        _response(200, posts),
+        _response(200, p1_comments),
+        _response(200, []),
+    ]
     collector = RedditCollector(
         base_url="https://example.test", use_synthetic=False, session=session
     )
@@ -109,10 +116,37 @@ def test_reddit_collector_arctic_shift_posts_and_comments():
     assert p1["num_comments"] == 45
     c1 = df.set_index("id").loc["c1"]
     assert c1["source"] == "reddit/r/wallstreetbets/comments"
+    assert c1["symbol"] == "NVDA"  # inherited from its post
     assert c1["timestamp"] == datetime.fromtimestamp(1759495000, timezone.utc)
-    first_params = session.get.call_args_list[0].kwargs["params"]
-    assert first_params["subreddit"] == "wallstreetbets"
-    assert first_params["query"] == "NVDA"
+    post_params = session.get.call_args_list[0].kwargs["params"]
+    assert post_params["subreddit"] == "wallstreetbets"
+    assert "query" not in post_params  # full-text search is refused on busy subreddits
+    thread_params = [c.kwargs["params"] for c in session.get.call_args_list[1:]]
+    assert [p["link_id"] for p in thread_params] == ["p1", "p2"]  # most-discussed first
+    assert all("body" not in p for p in thread_params)
+
+
+def test_reddit_collector_caps_kept_posts_per_symbol():
+    """`limit` caps matches per symbol while the scan still covers the whole page."""
+    # Arrange
+    page = [
+        {"id": f"a{i}", "created_utc": 2000 - i, "title": "SPY and QQQ", "score": 1}
+        for i in range(30)
+    ]
+    session = MagicMock()
+    session.get.return_value = _response(200, page)
+    collector = RedditCollector(
+        base_url="https://example.test", use_synthetic=False, session=session
+    )
+
+    # Act
+    df = collector.fetch_posts(
+        ["SPY", "QQQ"], subreddits=["stocks"], limit=5, include_comments=False
+    )
+
+    # Assert
+    assert df["symbol"].value_counts().to_dict() == {"SPY": 5, "QQQ": 5}
+    assert session.get.call_count == 1
 
 
 def test_reddit_collector_paginates_backwards_in_time():
@@ -140,7 +174,7 @@ def test_reddit_collector_paginates_backwards_in_time():
     second_params = session.get.call_args_list[1].kwargs["params"]
     assert second_params["before"] == 1901
     assert second_params["after"] == 1000
-    assert second_params["limit"] == 50
+    assert second_params["limit"] == 100
 
 
 def test_reddit_collector_retries_once_on_rate_limit():

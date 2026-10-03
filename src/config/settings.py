@@ -34,6 +34,9 @@ class DataSettings(BaseSettings):
     reddit_subreddits: List[str] = ["wallstreetbets", "stocks", "investing"]
     reddit_request_timeout_s: float = 15.0
     reddit_use_synthetic: bool = False
+    reddit_max_posts_scanned: int = 1000
+    reddit_comment_threads: int = 10
+    reddit_comments_per_thread: int = 100
 
 
 class NLPSettings(BaseSettings):
