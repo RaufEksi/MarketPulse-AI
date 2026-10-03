@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 import torch
 
+from src.data_engine.reddit_collector import RedditCollector
 from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
 from src.feature_engineering.technical_indicators import MODEL_FEATURE_COLUMNS
 from src.models.checkpoint import fit_feature_normalizer, load_checkpoint, save_checkpoint
@@ -89,6 +90,8 @@ def test_train_script_writes_loadable_checkpoint(tmp_path: Path, monkeypatch) ->
     )
     train_model = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(train_model)
+    # Keep the test offline: synthetic Reddit posts instead of Arctic Shift calls
+    monkeypatch.setattr(train_model, "RedditCollector", lambda: RedditCollector(use_synthetic=True))
     out = tmp_path / "marketpulse_net.pt"
 
     # Act

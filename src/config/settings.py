@@ -30,6 +30,10 @@ class DataSettings(BaseSettings):
     raw_dir: str = "data/raw"
     processed_dir: str = "data/processed"
     cache_dir: str = "data/cache"
+    reddit_api_base_url: str = "https://arctic-shift.photon-reddit.com"
+    reddit_subreddits: List[str] = ["wallstreetbets", "stocks", "investing"]
+    reddit_request_timeout_s: float = 15.0
+    reddit_use_synthetic: bool = False
 
 
 class NLPSettings(BaseSettings):
@@ -94,6 +98,11 @@ class DashboardSettings(BaseSettings):
     host: str = "0.0.0.0"  # nosec B104
     port: int = 8501
     theme: str = "dark"
+    api_base_url: str = "http://localhost:8000"
+    api_timeout_seconds: float = 120.0
+    cache_ttl_seconds: int = 60
+    bars_limit: int = 78
+    texts_limit: int = 20
 
 
 class Settings(BaseSettings):
@@ -114,10 +123,9 @@ class Settings(BaseSettings):
     alpaca_base_url: str = Field(
         default="https://paper-api.alpaca.markets", alias="ALPACA_BASE_URL"
     )
-    reddit_client_id: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_ID")
-    reddit_client_secret: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_SECRET")
-    reddit_user_agent: str = Field(default="MarketPulseAI/1.0.0", alias="REDDIT_USER_AGENT")
     news_api_key: Optional[str] = Field(default=None, alias="NEWS_API_KEY")
+    # Overrides dashboard.api_base_url (e.g. http://api:8000 inside docker-compose)
+    marketpulse_api_url: Optional[str] = Field(default=None, alias="MARKETPULSE_API_URL")
 
     # Structured YAML Sub-configs
     app: AppSettings = AppSettings()
