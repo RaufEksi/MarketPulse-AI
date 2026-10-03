@@ -60,6 +60,7 @@ TEXT_COLUMNS = ["id", "timestamp", "symbol", "source", "text", "score", "num_com
 BAR_SOURCES = ["auto", "alpaca", "yfinance", "synthetic"]
 YFINANCE_MAX_5MIN_DAYS = 59  # Yahoo only serves ~60 days of 5-minute history
 TRAINER_CHECKPOINT_NAME = "best_marketpulse_net.pt"
+DEFAULT_REDDIT_LIMIT = 1000  # Per subreddit, symbol and kind (post/comment)
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
@@ -96,6 +97,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "--no-live-text",
         action="store_true",
         help="Do not call the Reddit/News collectors; use only --text-file",
+    )
+    parser.add_argument(
+        "--reddit-limit",
+        type=int,
+        default=DEFAULT_REDDIT_LIMIT,
+        help="Max Reddit posts/comments per subreddit pulled for the bar time range",
     )
     parser.add_argument(
         "--allow-fallback-embeddings",
@@ -160,7 +167,14 @@ def load_bars(source: str, symbol: str, days: int) -> pd.DataFrame:
     return bars
 
 
-def load_texts(symbol: str, text_file: Optional[Path], use_collectors: bool) -> pd.DataFrame:
+def load_texts(
+    symbol: str,
+    text_file: Optional[Path],
+    use_collectors: bool,
+    after: Optional[datetime] = None,
+    before: Optional[datetime] = None,
+    reddit_limit: int = DEFAULT_REDDIT_LIMIT,
+) -> pd.DataFrame:
     """
     Gather financial text events for ``symbol`` from a file and/or the collectors.
 
@@ -168,6 +182,9 @@ def load_texts(symbol: str, text_file: Optional[Path], use_collectors: bool) -> 
         symbol: Asset ticker; rows for other symbols are dropped.
         text_file: Optional Parquet/CSV file following the collector column contract.
         use_collectors: Whether to call the Reddit and News collectors.
+        after: Only fetch Reddit items created after this UTC time.
+        before: Only fetch Reddit items created before this UTC time.
+        reddit_limit: Max Reddit items per subreddit, symbol and kind.
 
     Returns:
         De-duplicated DataFrame with ``TEXT_COLUMNS`` and a UTC 'timestamp' column.
@@ -188,7 +205,12 @@ def load_texts(symbol: str, text_file: Optional[Path], use_collectors: bool) -> 
 
     if use_collectors:
         for name, fetch in (
-            ("reddit", lambda: RedditCollector().fetch_posts(symbols=[symbol])),
+            (
+                "reddit",
+                lambda: RedditCollector().fetch_posts(
+                    symbols=[symbol], limit=reddit_limit, after=after, before=before
+                ),
+            ),
             ("news", lambda: NewsCollector().fetch_headlines(symbols=[symbol])),
         ):
             try:
@@ -275,7 +297,14 @@ def main(argv: Optional[List[str]] = None) -> Path:
     ).create_labels(features_df)
 
     # 3. Texts -> FinBERT embeddings -> decay-aligned per-bar sentiment
-    texts = load_texts(args.symbol, args.text_file, use_collectors=not args.no_live_text)
+    texts = load_texts(
+        args.symbol,
+        args.text_file,
+        use_collectors=not args.no_live_text,
+        after=bars["timestamp"].iloc[0].to_pydatetime(),
+        before=bars["timestamp"].iloc[-1].to_pydatetime(),
+        reddit_limit=args.reddit_limit,
+    )
     text_mat = build_text_matrix(labeled_df, texts, embedder)
     bars_with_text = int(np.any(text_mat != 0.0, axis=1).sum())
     logger.info(
