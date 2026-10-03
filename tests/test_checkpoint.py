@@ -128,3 +128,74 @@ def test_train_script_requires_finbert_by_default(monkeypatch) -> None:
 
     with pytest.raises(ConfigurationError, match="FinBERT"):
         train_model.main(["--bars-source=synthetic", "--days=3"])
+
+
+def test_load_bars_auto_falls_back_to_yfinance_when_alpaca_fails(monkeypatch) -> None:
+    """Auto mode survives Alpaca auth errors (e.g. placeholder keys) by using Yahoo Finance."""
+    from src.utils.exceptions import DataIngestionError
+
+    # Arrange
+    spec = importlib.util.spec_from_file_location(
+        "train_model", REPO_ROOT / "scripts" / "train_model.py"
+    )
+    train_model = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(train_model)
+    settings = train_model.get_settings()
+    monkeypatch.setattr(settings, "alpaca_api_key", "placeholder")
+    monkeypatch.setattr(settings, "alpaca_secret_key", "placeholder")
+
+    def fail(*args, **kwargs):
+        raise DataIngestionError("401 Unauthorized")
+
+    def fake_yfinance(self, symbol, period):
+        end = train_model.datetime.now(train_model.timezone.utc)
+        start = end - train_model.timedelta(days=1)
+        return train_model.AlpacaDataCollector()._generate_synthetic_bars(symbol, start, end)
+
+    monkeypatch.setattr(train_model.AlpacaDataCollector, "fetch_5min_bars", fail)
+    monkeypatch.setattr(train_model.YFinanceDataCollector, "fetch_5min_bars", fake_yfinance)
+
+    # Act
+    bars = train_model.load_bars("auto", "SPY", days=1)
+
+    # Assert
+    assert len(bars) > 0
+
+    # An explicit --bars-source alpaca still surfaces the error
+    with pytest.raises(DataIngestionError):
+        train_model.load_bars("alpaca", "SPY", days=1)
+
+
+def test_fetch_reddit_by_day_covers_range_and_skips_failed_days() -> None:
+    """Reddit is fetched in daily windows; a failing day is skipped, not fatal."""
+    from datetime import datetime, timezone
+
+    import pandas as pd
+
+    from src.utils.exceptions import DataIngestionError
+
+    # Arrange
+    spec = importlib.util.spec_from_file_location(
+        "train_model", REPO_ROOT / "scripts" / "train_model.py"
+    )
+    train_model = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(train_model)
+    calls = []
+
+    class FakeCollector:
+        def fetch_posts(self, symbols, limit, after, before):
+            calls.append((after, before))
+            if len(calls) == 2:
+                raise DataIngestionError("422")
+            return pd.DataFrame({"timestamp": [after], "symbol": symbols, "text": ["x"]})
+
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = datetime(2026, 9, 3, 12, tzinfo=timezone.utc)
+
+    # Act
+    result = train_model.fetch_reddit_by_day(FakeCollector(), "SPY", start, end, limit=10)
+
+    # Assert
+    assert len(calls) == 3
+    assert calls[0][0] == start and calls[-1][1] == end
+    assert len(result) == 2
