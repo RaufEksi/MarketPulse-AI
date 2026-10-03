@@ -63,6 +63,9 @@ class RedditCollector:
         )
         self.timeout_s = timeout_s or settings.data.reddit_request_timeout_s
         self.default_subreddits = list(settings.data.reddit_subreddits)
+        self.max_posts_scanned = settings.data.reddit_max_posts_scanned
+        self.comment_threads = settings.data.reddit_comment_threads
+        self.comments_per_thread = settings.data.reddit_comments_per_thread
         self.session = session or requests.Session()
 
     def fetch_posts(
@@ -80,10 +83,13 @@ class RedditCollector:
         Args:
             symbols: Ticker symbols to search for (e.g. ["SPY", "NVDA"]).
             subreddits: Subreddits to search (defaults to settings).
-            limit: Maximum items fetched per subreddit, symbol and kind (post/comment).
+            limit: Maximum items kept per subreddit, symbol and kind (post/comment).
+                At most `data.reddit_max_posts_scanned` recent posts per subreddit are
+                scanned for ticker mentions.
             after: Only return items created after this UTC time.
             before: Only return items created before this UTC time.
-            include_comments: Whether to also collect matching comments.
+            include_comments: Whether to also collect comments from the most-discussed
+                matching posts (`data.reddit_comment_threads` threads per subreddit).
 
         Returns:
             DataFrame with columns id, timestamp, symbol, source, text, score, num_comments.
@@ -96,38 +102,38 @@ class RedditCollector:
             return self._generate_synthetic_posts(symbols, limit)
 
         records: List[Dict[str, Any]] = []
+        patterns = {symbol: _ticker_pattern(symbol) for symbol in symbols}
         for sub_name in subreddits or self.default_subreddits:
-            for symbol in symbols:
-                pattern = _ticker_pattern(symbol)
-                posts = self._search(
-                    POSTS_ENDPOINT,
-                    {"subreddit": sub_name, "query": symbol, "fields": POST_FIELDS},
-                    limit,
-                    after,
-                    before,
-                )
-                for post in posts:
-                    text = _join_text(post.get("title"), post.get("selftext"))
-                    if text and pattern.search(text):
-                        records.append(
-                            _record(post, symbol, f"reddit/r/{sub_name}", text, "num_comments")
-                        )
+            # Arctic Shift rejects full-text search (`query`/`body`) on very active
+            # subreddits such as r/wallstreetbets with HTTP 422, so scan the subreddit's
+            # posts for the time window and match tickers locally instead.
+            posts = self._search(
+                POSTS_ENDPOINT,
+                {"subreddit": sub_name, "fields": POST_FIELDS},
+                self.max_posts_scanned,
+                after,
+                before,
+            )
+            post_records: List[Dict[str, Any]] = []
+            post_symbols: Dict[str, List[str]] = {}
+            for post in posts:
+                text = _join_text(post.get("title"), post.get("selftext"))
+                matched = [s for s, pattern in patterns.items() if text and pattern.search(text)]
+                for symbol in matched:
+                    post_records.append(
+                        _record(post, symbol, f"reddit/r/{sub_name}", text, "num_comments")
+                    )
+                if matched:
+                    post_symbols[post["id"]] = matched
+            records.extend(_cap_per_symbol(post_records, limit))
 
-                if not include_comments:
-                    continue
-                comments = self._search(
-                    COMMENTS_ENDPOINT,
-                    {"subreddit": sub_name, "body": symbol, "fields": COMMENT_FIELDS},
-                    limit,
-                    after,
-                    before,
+            if include_comments and post_symbols:
+                records.extend(
+                    _cap_per_symbol(
+                        self._fetch_thread_comments(sub_name, posts, post_symbols, patterns),
+                        limit,
+                    )
                 )
-                for comment in comments:
-                    text = _join_text(comment.get("body"))
-                    if text and pattern.search(text):
-                        records.append(
-                            _record(comment, symbol, f"reddit/r/{sub_name}/comments", text, None)
-                        )
 
         if not records:
             return pd.DataFrame(columns=OUTPUT_COLUMNS)
@@ -135,6 +141,43 @@ class RedditCollector:
         df = df.drop_duplicates(subset=["id", "symbol"]).sort_values("timestamp")
         logger.info("Reddit items fetched", extra={"symbols": symbols, "count": len(df)})
         return df.reset_index(drop=True)
+
+    def _fetch_thread_comments(
+        self,
+        sub_name: str,
+        posts: List[Dict[str, Any]],
+        post_symbols: Dict[str, List[str]],
+        patterns: Dict[str, "re.Pattern[str]"],
+    ) -> List[Dict[str, Any]]:
+        """Fetch comments of the most-discussed matching posts and tag them with symbols.
+
+        A comment is attributed to the symbols its post matched plus any requested
+        ticker it mentions itself.
+        """
+        threads = sorted(
+            (p for p in posts if p["id"] in post_symbols and int(p.get("num_comments") or 0) > 0),
+            key=lambda p: int(p.get("num_comments") or 0),
+            reverse=True,
+        )[: self.comment_threads]
+        records: List[Dict[str, Any]] = []
+        for post in threads:
+            comments = self._search(
+                COMMENTS_ENDPOINT,
+                {"link_id": post["id"], "fields": COMMENT_FIELDS},
+                self.comments_per_thread,
+                None,
+                None,
+            )
+            for comment in comments:
+                text = _join_text(comment.get("body"))
+                if not text:
+                    continue
+                mentioned = [s for s, pattern in patterns.items() if pattern.search(text)]
+                for symbol in dict.fromkeys(post_symbols[post["id"]] + mentioned):
+                    records.append(
+                        _record(comment, symbol, f"reddit/r/{sub_name}/comments", text, None)
+                    )
+        return records
 
     def _search(
         self,
@@ -217,6 +260,17 @@ class RedditCollector:
 def _ticker_pattern(symbol: str) -> "re.Pattern[str]":
     """Match a ticker as a standalone token, optionally prefixed with '$'."""
     return re.compile(rf"(?<![A-Za-z0-9])\$?{re.escape(symbol)}(?![A-Za-z0-9])")
+
+
+def _cap_per_symbol(records: List[Dict[str, Any]], limit: int) -> List[Dict[str, Any]]:
+    """Keep at most `limit` records per symbol, preserving order (newest first)."""
+    counts: Dict[str, int] = {}
+    kept = []
+    for record in records:
+        if counts.get(record["symbol"], 0) < limit:
+            counts[record["symbol"]] = counts.get(record["symbol"], 0) + 1
+            kept.append(record)
+    return kept
 
 
 def _join_text(*parts: Optional[str]) -> str:

@@ -23,6 +23,11 @@ data:
   reddit_subreddits: ["wallstreetbets", "stocks", "investing"]
   reddit_request_timeout_s: 15.0
   reddit_use_synthetic: false # true = offline synthetic posts instead of API calls
+  # Arctic Shift refuses keyword search on busy subreddits (HTTP 422), so posts are
+  # scanned and tickers matched locally. Raise this for wider date ranges.
+  reddit_max_posts_scanned: 1000 # newest posts scanned per subreddit per call
+  reddit_comment_threads: 10 # most-discussed matching posts whose comments are fetched
+  reddit_comments_per_thread: 100
 
 nlp:
   finbert_model: "ProsusAI/finbert"
