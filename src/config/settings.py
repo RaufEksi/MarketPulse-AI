@@ -30,6 +30,10 @@ class DataSettings(BaseSettings):
     raw_dir: str = "data/raw"
     processed_dir: str = "data/processed"
     cache_dir: str = "data/cache"
+    reddit_api_base_url: str = "https://arctic-shift.photon-reddit.com"
+    reddit_subreddits: List[str] = ["wallstreetbets", "stocks", "investing"]
+    reddit_request_timeout_s: float = 15.0
+    reddit_use_synthetic: bool = False
 
 
 class NLPSettings(BaseSettings):
@@ -113,9 +117,6 @@ class Settings(BaseSettings):
     alpaca_base_url: str = Field(
         default="https://paper-api.alpaca.markets", alias="ALPACA_BASE_URL"
     )
-    reddit_client_id: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_ID")
-    reddit_client_secret: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_SECRET")
-    reddit_user_agent: str = Field(default="MarketPulseAI/1.0.0", alias="REDDIT_USER_AGENT")
     news_api_key: Optional[str] = Field(default=None, alias="NEWS_API_KEY")
 
     # Structured YAML Sub-configs

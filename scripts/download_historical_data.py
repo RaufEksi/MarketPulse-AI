@@ -34,7 +34,7 @@ def main():
 
     logger.info("Ingesting Reddit and News headlines...")
     reddit = RedditCollector()
-    reddit_df = reddit.fetch_posts([args.symbol])
+    reddit_df = reddit.fetch_posts([args.symbol], after=start_time, before=end_time)
 
     news = NewsCollector()
     news_df = news.fetch_headlines([args.symbol])

@@ -13,7 +13,7 @@ This document details the data ingestion, preprocessing, temporal alignment form
 - **Trading Hours**: Regular US Market Hours (09:30 - 16:00 EST / 78 bars per session).
 
 ### NLP Sentiment Ingestion
-- **Reddit Ingestion**: PRAW querying `r/wallstreetbets` and `r/stocks` for ticker-tagged submissions and high-engagement comments.
+- **Reddit Ingestion**: [Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift) archive API querying `r/wallstreetbets`, `r/stocks` and `r/investing` for ticker-tagged submissions and comments (no API key; Reddit closed self-service app creation in Nov 2025).
 - **News Ingestion**: NewsAPI & GDELT polling financial news feeds, SEC alerts, and press releases.
 
 ---
