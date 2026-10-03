@@ -2,6 +2,7 @@
 Alpaca Markets 5-minute OHLCV bar collector.
 """
 
+import zlib
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -13,6 +14,9 @@ from src.utils.exceptions import DataIngestionError
 from src.utils.logger import get_logger
 
 logger = get_logger("AlpacaDataCollector")
+
+SYNTHETIC_BASE_PRICES = {"SPY": 500.0}
+SYNTHETIC_DEFAULT_BASE_PRICE = 180.0
 
 
 class AlpacaDataCollector:
@@ -115,16 +119,17 @@ class AlpacaDataCollector:
             date_range = pd.date_range(start=start_time, periods=78, freq="5min", tz="UTC")
 
         n = len(date_range)
-        np.random.seed(42)
-        base_price = 500.0 if symbol == "SPY" else 180.0
-        returns = np.random.normal(0.0001, 0.002, size=n)
+        # Deterministic per symbol (crc32 is stable across processes, unlike hash())
+        rng = np.random.default_rng(get_settings().app.seed + zlib.crc32(symbol.encode()))
+        base_price = SYNTHETIC_BASE_PRICES.get(symbol, SYNTHETIC_DEFAULT_BASE_PRICE)
+        returns = rng.normal(0.0001, 0.002, size=n)
         prices = base_price * np.exp(np.cumsum(returns))
 
-        highs = prices * (1.0 + np.abs(np.random.normal(0, 0.001, size=n)))
-        lows = prices * (1.0 - np.abs(np.random.normal(0, 0.001, size=n)))
+        highs = prices * (1.0 + np.abs(rng.normal(0, 0.001, size=n)))
+        lows = prices * (1.0 - np.abs(rng.normal(0, 0.001, size=n)))
         opens = (prices + lows) / 2.0
         closes = prices
-        volumes = np.random.randint(10000, 500000, size=n)
+        volumes = rng.integers(10000, 500000, size=n)
 
         return pd.DataFrame(
             {
@@ -136,6 +141,6 @@ class AlpacaDataCollector:
                 "close": closes,
                 "volume": volumes,
                 "vwap": (opens + highs + lows + closes) / 4.0,
-                "trade_count": np.random.randint(100, 5000, size=n),
+                "trade_count": rng.integers(100, 5000, size=n),
             }
         )
