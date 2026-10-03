@@ -164,3 +164,38 @@ def test_load_bars_auto_falls_back_to_yfinance_when_alpaca_fails(monkeypatch) ->
     # An explicit --bars-source alpaca still surfaces the error
     with pytest.raises(DataIngestionError):
         train_model.load_bars("alpaca", "SPY", days=1)
+
+
+def test_fetch_reddit_by_day_covers_range_and_skips_failed_days() -> None:
+    """Reddit is fetched in daily windows; a failing day is skipped, not fatal."""
+    from datetime import datetime, timezone
+
+    import pandas as pd
+
+    from src.utils.exceptions import DataIngestionError
+
+    # Arrange
+    spec = importlib.util.spec_from_file_location(
+        "train_model", REPO_ROOT / "scripts" / "train_model.py"
+    )
+    train_model = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(train_model)
+    calls = []
+
+    class FakeCollector:
+        def fetch_posts(self, symbols, limit, after, before):
+            calls.append((after, before))
+            if len(calls) == 2:
+                raise DataIngestionError("422")
+            return pd.DataFrame({"timestamp": [after], "symbol": symbols, "text": ["x"]})
+
+    start = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    end = datetime(2026, 9, 3, 12, tzinfo=timezone.utc)
+
+    # Act
+    result = train_model.fetch_reddit_by_day(FakeCollector(), "SPY", start, end, limit=10)
+
+    # Assert
+    assert len(calls) == 3
+    assert calls[0][0] == start and calls[-1][1] == end
+    assert len(result) == 2

@@ -61,6 +61,7 @@ BAR_SOURCES = ["auto", "alpaca", "yfinance", "synthetic"]
 YFINANCE_MAX_5MIN_DAYS = 59  # Yahoo only serves ~60 days of 5-minute history
 TRAINER_CHECKPOINT_NAME = "best_marketpulse_net.pt"
 DEFAULT_REDDIT_LIMIT = 1000  # Per subreddit, symbol and kind (post/comment)
+REDDIT_WINDOW = timedelta(days=1)  # Reddit is fetched day by day to cover the whole range
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
@@ -176,6 +177,52 @@ def load_bars(source: str, symbol: str, days: int) -> pd.DataFrame:
     return bars
 
 
+def fetch_reddit_by_day(
+    collector: RedditCollector,
+    symbol: str,
+    after: Optional[datetime],
+    before: Optional[datetime],
+    limit: int,
+) -> pd.DataFrame:
+    """
+    Fetch Reddit items one day at a time so the whole bar range gets text.
+
+    The collector scans only the newest posts of each window, so a single call over
+    weeks of busy subreddits would return text for the last day or so only.
+
+    Args:
+        collector: Reddit collector.
+        symbol: Asset ticker.
+        after: Range start (UTC); a single unbounded call is made if None.
+        before: Range end (UTC); a single unbounded call is made if None.
+        limit: Max items per subreddit, symbol and kind for each window.
+
+    Returns:
+        Concatenated Reddit items; days whose request failed are skipped with a warning.
+    """
+    if after is None or before is None:
+        return collector.fetch_posts(symbols=[symbol], limit=limit, after=after, before=before)
+
+    frames = []
+    window_start = after
+    num_windows = int(np.ceil((before - after) / REDDIT_WINDOW))
+    for i in range(num_windows):
+        window_end = min(window_start + REDDIT_WINDOW, before)
+        try:
+            frames.append(
+                collector.fetch_posts(
+                    symbols=[symbol], limit=limit, after=window_start, before=window_end
+                )
+            )
+        except MarketPulseException as e:
+            logger.warning(f"Skipping Reddit day {window_start.date()}: {e.message}")
+        logger.info(f"Reddit day {i + 1}/{num_windows} ({window_start.date()}) done")
+        window_start = window_end
+
+    frames = [f for f in frames if not f.empty]
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=TEXT_COLUMNS)
+
+
 def load_texts(
     symbol: str,
     text_file: Optional[Path],
@@ -216,9 +263,7 @@ def load_texts(
         for name, fetch in (
             (
                 "reddit",
-                lambda: RedditCollector().fetch_posts(
-                    symbols=[symbol], limit=reddit_limit, after=after, before=before
-                ),
+                lambda: fetch_reddit_by_day(RedditCollector(), symbol, after, before, reddit_limit),
             ),
             ("news", lambda: NewsCollector().fetch_headlines(symbols=[symbol])),
         ):
