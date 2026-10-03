@@ -1,17 +1,22 @@
 """
 Backtesting & Strategy Performance Engine Page.
+
+Equity curves and metrics come from POST /backtest.
 """
 
-import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+
+from src.config.settings import get_settings
+from src.dashboard.components.api_client import run_backtest, show_api_error
+from src.utils.exceptions import APIClientError
 
 st.title("📉 Volatility Hedging Strategy Backtester")
 st.caption("Quantitative Risk-Avoidance vs Buy & Hold Benchmark")
 
 col_sym, col_params1, col_params2, col_params3 = st.columns([1, 1, 1, 1])
 with col_sym:
-    symbol = st.selectbox("Asset Symbol", ["SPY", "QQQ", "NVDA", "TSLA", "AAPL", "MSFT"])
+    symbol = st.selectbox("Asset Symbol", get_settings().data.symbols)
 with col_params1:
     threshold = st.slider("Spike Cutoff Threshold", 0.50, 0.90, 0.65, 0.05)
 with col_params2:
@@ -19,92 +24,74 @@ with col_params2:
 with col_params3:
     capital = st.number_input("Initial Capital ($)", 10000, 1000000, 100000, 10000)
 
-# Generate backtesting equity curves tailored to asset
-seed = abs(hash(symbol)) % 10000
-np.random.seed(seed)
-days = 120
+try:
+    with st.spinner("Running backtest on the API..."):
+        result = run_backtest(symbol, float(threshold), float(hedge_ratio), float(capital))
+except APIClientError as e:
+    show_api_error(e)
 
-vol_map = {"NVDA": 0.024, "TSLA": 0.022, "QQQ": 0.014, "AAPL": 0.012, "SPY": 0.009, "MSFT": 0.011}
-vol = vol_map.get(symbol, 0.012)
+strategy = result["strategy_metrics"]
+benchmark = result["benchmark_metrics"]
 
-rets_bench = np.random.normal(0.0007, vol, size=days)
-# Inject 2 major volatility drawdown regimes
-rets_bench[35:45] = np.random.normal(-0.022, vol * 1.8, size=10)
-rets_bench[85:92] = np.random.normal(-0.028, vol * 2.0, size=7)
 
-# Model predictions
-pred_probs = np.random.uniform(0.1, 0.35, size=days)
-pred_probs[33:45] = np.random.uniform(0.70, 0.95, size=12)
-pred_probs[83:92] = np.random.uniform(0.75, 0.92, size=9)
+def _fmt(metrics: dict, key: str, fmt: str) -> str:
+    """Format a metric value, or an em dash if the API did not return it."""
+    return format(metrics[key], fmt) if key in metrics else "—"
 
-# Hedged strategy allocation
-allocations = np.where(pred_probs >= threshold, hedge_ratio, 1.0)
-rets_strat = rets_bench * allocations
 
-equity_bench = capital * np.cumprod(1.0 + rets_bench)
-equity_strat = capital * np.cumprod(1.0 + rets_strat)
+strategy_equity = result["strategy_equity"]
+benchmark_equity = result["benchmark_equity"]
+if strategy_equity and benchmark_equity:
+    strat_ret = (strategy_equity[-1] / capital - 1.0) * 100
+    bench_ret = (benchmark_equity[-1] / capital - 1.0) * 100
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        st.metric(
+            f"Strategy Return ({result['symbol']})",
+            f"{strat_ret:+.2f}%",
+            delta=f"{strat_ret - bench_ret:+.2f}% vs Bench",
+        )
+    with col_m2:
+        st.metric("Final Strategy Equity", f"${strategy_equity[-1]:,.0f}")
 
-# Calculate financial metrics
-bench_ret = ((equity_bench[-1] / capital) - 1.0) * 100
-strat_ret = ((equity_strat[-1] / capital) - 1.0) * 100
-
-peak_bench = np.maximum.accumulate(equity_bench)
-dd_bench = np.min((equity_bench - peak_bench) / peak_bench) * 100
-
-peak_strat = np.maximum.accumulate(equity_strat)
-dd_strat = np.min((equity_strat - peak_strat) / peak_strat) * 100
-
-sharpe_strat = float(np.mean(rets_strat) / (np.std(rets_strat) + 1e-9) * np.sqrt(252))
-sharpe_bench = float(np.mean(rets_bench) / (np.std(rets_bench) + 1e-9) * np.sqrt(252))
-
-col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-with col_m1:
-    delta_ret = strat_ret - bench_ret
-    st.metric(
-        f"Strategy Return ({symbol})",
-        f"{strat_ret:+.1f}%",
-        delta=f"{delta_ret:+.1f}% vs Bench",
-    )
-with col_m2:
-    saved_dd = abs(dd_bench) - abs(dd_strat)
-    st.metric(
-        "Strategy Max Drawdown",
-        f"{dd_strat:.1f}%",
-        delta=f"+{saved_dd:.1f}% Risk Reduced",
-        delta_color="normal",
-    )
-with col_m3:
-    st.metric("Strategy Sharpe", f"{sharpe_strat:.2f}", delta=f"{sharpe_strat - sharpe_bench:+.2f}")
-with col_m4:
-    hedged_days = int(np.sum(allocations < 1.0))
-    st.metric(
-        "Days Hedged", f"{hedged_days} / {days}", delta=f"{(hedged_days/days)*100:.0f}% of time"
-    )
+st.markdown("### 📋 Strategy vs Benchmark Metrics")
+metric_keys = sorted(set(strategy) | set(benchmark))
+st.dataframe(
+    [
+        {
+            "metric": key,
+            "strategy": _fmt(strategy, key, ".4f"),
+            "benchmark": _fmt(benchmark, key, ".4f"),
+        }
+        for key in metric_keys
+    ],
+    use_container_width=True,
+    hide_index=True,
+)
 
 fig_eq = go.Figure()
 fig_eq.add_trace(
     go.Scatter(
-        y=equity_strat,
+        y=strategy_equity,
         mode="lines",
-        name=f"MarketPulse AI Hedged ({symbol})",
+        name=f"MarketPulse AI Hedged ({result['symbol']})",
         line=dict(color="#10b981", width=2.5),
     )
 )
 fig_eq.add_trace(
     go.Scatter(
-        y=equity_bench,
+        y=benchmark_equity,
         mode="lines",
-        name=f"Buy & Hold {symbol} Benchmark",
+        name=f"Buy & Hold {result['symbol']} Benchmark",
         line=dict(color="#64748b", dash="dot", width=1.5),
     )
 )
-
 fig_eq.update_layout(
-    title=f"Cumulative Portfolio Equity Trajectory: {symbol} ($)",
+    title=f"Cumulative Portfolio Equity Trajectory: {result['symbol']} ($)",
     height=420,
     template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)",
     yaxis_title="Portfolio Equity ($)",
-    xaxis_title="Trading Days",
+    xaxis_title="5-Minute Bars",
 )
 st.plotly_chart(fig_eq, use_container_width=True)

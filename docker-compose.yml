@@ -30,6 +30,8 @@ services:
       - "8501:8501"
     env_file:
       - .env
+    environment:
+      - MARKETPULSE_API_URL=http://api:8000
     volumes:
       - .:/app
     depends_on:

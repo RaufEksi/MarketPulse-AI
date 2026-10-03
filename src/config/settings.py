@@ -93,6 +93,11 @@ class DashboardSettings(BaseSettings):
     host: str = "0.0.0.0"  # nosec B104
     port: int = 8501
     theme: str = "dark"
+    api_base_url: str = "http://localhost:8000"
+    api_timeout_seconds: float = 120.0
+    cache_ttl_seconds: int = 60
+    bars_limit: int = 78
+    texts_limit: int = 20
 
 
 class Settings(BaseSettings):
@@ -117,6 +122,8 @@ class Settings(BaseSettings):
     reddit_client_secret: Optional[str] = Field(default=None, alias="REDDIT_CLIENT_SECRET")
     reddit_user_agent: str = Field(default="MarketPulseAI/1.0.0", alias="REDDIT_USER_AGENT")
     news_api_key: Optional[str] = Field(default=None, alias="NEWS_API_KEY")
+    # Overrides dashboard.api_base_url (e.g. http://api:8000 inside docker-compose)
+    marketpulse_api_url: Optional[str] = Field(default=None, alias="MARKETPULSE_API_URL")
 
     # Structured YAML Sub-configs
     app: AppSettings = AppSettings()

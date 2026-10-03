@@ -25,6 +25,30 @@ class SentimentEvent(BaseModel):
     source: str = "news"
 
 
+class MarketBar(OHLCVBar):
+    atr_14: Optional[float] = None
+    rsi_14: Optional[float] = None
+
+
+class MarketBarsResponse(BaseModel):
+    symbol: str
+    is_synthetic: bool
+    bars: List[MarketBar]
+
+
+class MarketText(BaseModel):
+    timestamp: datetime
+    symbol: str
+    source: str
+    text: str
+    score: Optional[float] = None
+
+
+class MarketTextsResponse(BaseModel):
+    symbol: str
+    texts: List[MarketText]
+
+
 class PredictRequest(BaseModel):
     symbol: str = Field(..., json_schema_extra={"example": "SPY"})
     ohlcv_bars: List[OHLCVBar]
