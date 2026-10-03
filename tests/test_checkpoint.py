@@ -199,3 +199,31 @@ def test_fetch_reddit_by_day_covers_range_and_skips_failed_days() -> None:
     assert len(calls) == 3
     assert calls[0][0] == start and calls[-1][1] == end
     assert len(result) == 2
+
+
+def test_load_texts_skips_synthetic_news_without_api_key(monkeypatch) -> None:
+    """Without a NewsAPI key, training must not ingest NewsCollector's synthetic headlines."""
+    import pandas as pd
+
+    # Arrange
+    spec = importlib.util.spec_from_file_location(
+        "train_model", REPO_ROOT / "scripts" / "train_model.py"
+    )
+    train_model = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(train_model)
+    monkeypatch.setattr(train_model.get_settings(), "news_api_key", None)
+    reddit = pd.DataFrame(
+        {"timestamp": ["2026-09-01T14:00:00Z"], "symbol": ["SPY"], "text": ["real post"]}
+    )
+    monkeypatch.setattr(train_model, "fetch_reddit_by_day", lambda *args, **kwargs: reddit)
+
+    def news_called(*args, **kwargs):
+        raise AssertionError("NewsCollector must not be called without an API key")
+
+    monkeypatch.setattr(train_model.NewsCollector, "fetch_headlines", news_called)
+
+    # Act
+    texts = train_model.load_texts("SPY", None, use_collectors=True)
+
+    # Assert
+    assert texts["text"].tolist() == ["real post"]
