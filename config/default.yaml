@@ -66,3 +66,8 @@ dashboard:
   host: "0.0.0.0"
   port: 8501
   theme: "dark"
+  api_base_url: "http://localhost:8000" # overridden by MARKETPULSE_API_URL env var
+  api_timeout_seconds: 120.0 # /predict and /explain may load FinBERT on first call
+  cache_ttl_seconds: 60
+  bars_limit: 78
+  texts_limit: 20

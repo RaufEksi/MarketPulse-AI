@@ -5,6 +5,10 @@ Streamlit Main Entrypoint.
 
 import streamlit as st
 
+from src.config.settings import get_settings
+from src.dashboard.components.api_client import fetch_health, get_api_base_url
+from src.utils.exceptions import APIClientError
+
 st.set_page_config(
     page_title="MarketPulse AI | Volatility Terminal",
     page_icon="📊",
@@ -66,15 +70,28 @@ st.sidebar.info(
     "XAI attribution, or backtest strategies."
 )
 
+settings = get_settings()
+
+try:
+    health = fetch_health()
+except APIClientError as e:
+    health = None
+    st.error(f"MarketPulse API is unreachable at `{get_api_base_url()}`: {e.message}")
+
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric(label="Active Symbols", value="6 Assets", delta="SPY, QQQ, AAPL...")
+    st.metric(
+        label="Active Symbols",
+        value=f"{len(settings.data.symbols)} Assets",
+        delta=", ".join(settings.data.symbols[:3]) + "...",
+        delta_color="off",
+    )
 with col2:
-    st.metric(label="Inference Latency", value="18.4 ms", delta="-2.1 ms", delta_color="inverse")
+    st.metric(label="API Status", value=health["status"].title() if health else "Offline")
 with col3:
-    st.metric(label="Model PR-AUC", value="0.842", delta="+0.06 vs Baseline")
+    st.metric(label="Active Model", value=health["active_model"] if health else "—")
 with col4:
-    st.metric(label="Data Ingestion Status", value="All Systems Nominal", delta="Synced")
+    st.metric(label="API Version", value=health["version"] if health else "—")
 
 st.markdown("---")
 st.markdown("### 📌 Terminal Overview")

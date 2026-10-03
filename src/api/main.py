@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import backtest, explain, health, predict
+from src.api.routes import backtest, explain, health, market_data, predict
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 
@@ -55,6 +55,8 @@ def create_app() -> FastAPI:
                 "predict": "/predict",
                 "explain": "/explain",
                 "backtest": "/backtest",
+                "market_bars": "/market/bars",
+                "market_texts": "/market/texts",
                 "metrics": "/metrics",
             },
         }
@@ -64,6 +66,7 @@ def create_app() -> FastAPI:
     app.include_router(explain.router, tags=["Explainability"])
     app.include_router(backtest.router, tags=["Backtesting"])
     app.include_router(health.router, tags=["System & Monitoring"])
+    app.include_router(market_data.router, tags=["Market Data"])
 
     return app
 
