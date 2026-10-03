@@ -14,6 +14,15 @@ from src.utils.logger import get_logger
 
 logger = get_logger("TemporalAligner")
 
+_EPOCH = pd.Timestamp(0, tz="UTC")
+
+
+def _to_epoch_seconds(timestamps: pd.Series) -> np.ndarray:
+    """Convert timestamps to integer UTC epoch seconds, independent of datetime64 unit."""
+    as_utc = pd.to_datetime(pd.Series(timestamps), utc=True)
+    seconds: np.ndarray = ((as_utc - _EPOCH) // pd.Timedelta(seconds=1)).to_numpy(dtype=np.int64)
+    return seconds
+
 
 class TemporalAligner:
     """
@@ -53,12 +62,8 @@ class TemporalAligner:
             logger.info("No text events provided; returning zero-sentiment matrix.")
             return aligned_matrix
 
-        # Ensure timestamps are in nanoseconds / seconds since epoch
-        bar_timestamps = pd.to_datetime(bars_df["timestamp"]).astype(np.int64) // 10**9
-        text_timestamps = pd.to_datetime(text_df["timestamp"]).astype(np.int64) // 10**9
-
-        bar_ts_arr = bar_timestamps.values
-        text_ts_arr = text_timestamps.values
+        bar_ts_arr = _to_epoch_seconds(bars_df["timestamp"])
+        text_ts_arr = _to_epoch_seconds(text_df["timestamp"])
 
         # For each bar, compute vectorized decaying sum of all previous events
         # To keep computation fast, only look back up to 24 hours (86400 seconds)

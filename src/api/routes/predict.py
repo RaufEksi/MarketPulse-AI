@@ -5,41 +5,17 @@ FastAPI /predict endpoint: Real-time volatility spike prediction.
 import time
 import uuid
 
-import numpy as np
 import pandas as pd
 import torch
 from fastapi import APIRouter, HTTPException
 
+from src.api.model_registry import build_price_sequence, build_text_vector, get_model_bundle
 from src.api.schemas import ConfidenceInterval, PredictRequest, PredictResponse
-from src.data_alignment.exponential_decay import TemporalAligner
-from src.feature_engineering.sentiment_embedder import FinBERTEmbedder
-from src.feature_engineering.technical_indicators import TechnicalFeatureEngine
-from src.models.hybrid_network import MarketPulseNet
+from src.utils.exceptions import ModelInferenceError
 from src.utils.logger import get_logger
 
 logger = get_logger("PredictRoute")
 router = APIRouter()
-
-# Shared lazy model instance
-_model = None
-_embedder = None
-_feature_engine = TechnicalFeatureEngine()
-_aligner = TemporalAligner()
-
-
-def get_or_load_model() -> MarketPulseNet:
-    global _model
-    if _model is None:
-        _model = MarketPulseNet(ts_input_dim=16, text_input_dim=768, hidden_dim=128)
-        _model.eval()
-    return _model
-
-
-def get_or_load_embedder() -> FinBERTEmbedder:
-    global _embedder
-    if _embedder is None:
-        _embedder = FinBERTEmbedder()
-    return _embedder
 
 
 @router.post("/predict", response_model=PredictResponse)
@@ -59,62 +35,29 @@ async def predict_volatility(request: PredictRequest) -> PredictResponse:
             ),
         )
 
-    # 1. Convert bars to DataFrame and compute technical indicators
-    bars_data = [b.model_dump() for b in request.ohlcv_bars]
-    bars_df = pd.DataFrame(bars_data)
-    features_df = _feature_engine.transform(bars_df)
+    # 1. Technical features -> normalized [1, lookback, num_features] sequence
+    try:
+        bundle = get_model_bundle()
+    except ModelInferenceError as e:
+        logger.error(f"Model unavailable: {e.message}")
+        raise HTTPException(status_code=503, detail="Prediction model is unavailable.") from e
+    bars_df = pd.DataFrame([b.model_dump() for b in request.ohlcv_bars])
+    ts_seq = build_price_sequence(bars_df, bundle)
+    ts_tensor = torch.tensor(ts_seq, dtype=torch.float32).unsqueeze(0)
 
-    # 2. Extract technical features array of shape [1, 78, 16]
-    feature_cols = [
-        "open",
-        "high",
-        "low",
-        "close",
-        "volume_ratio",
-        "log_return",
-        "atr_14",
-        "rsi_14",
-        "macd_line",
-        "macd_signal",
-        "macd_hist",
-        "bb_pct_b",
-        "bb_bandwidth",
-        "rolling_vol_12",
-        "rolling_vol_36",
-        "rolling_vol_78",
-    ]
-    for col in feature_cols:
-        if col not in features_df.columns:
-            features_df[col] = 0.0
+    # 2. Text events -> FinBERT embeddings decay-aligned to the last bar [1, 768]
+    text_vec = build_text_vector(
+        bars_df,
+        [t.headline for t in request.recent_texts],
+        [t.timestamp for t in request.recent_texts],
+    )
+    text_tensor = torch.tensor(text_vec, dtype=torch.float32)
 
-    raw_features = features_df[feature_cols].values
-    if len(raw_features) < 78:
-        # Pad sequence with earliest bar if shorter than 78
-        padding = np.repeat(raw_features[:1], 78 - len(raw_features), axis=0)
-        ts_seq = np.vstack([padding, raw_features])[-78:]
-    else:
-        ts_seq = raw_features[-78:]
-
-    ts_tensor = torch.tensor(ts_seq, dtype=torch.float32).unsqueeze(0)  # [1, 78, 16]
-
-    # 3. Process text events
-    embedder = get_or_load_embedder()
-    if request.recent_texts:
-        text_strings = [t.headline for t in request.recent_texts]
-        text_timestamps = [t.timestamp for t in request.recent_texts]
-        text_df = pd.DataFrame({"timestamp": text_timestamps, "text": text_strings})
-        embeddings = embedder.embed_texts(text_strings)
-        aligned_sentiment = _aligner.align_sentiment_to_bars(bars_df.tail(1), text_df, embeddings)
-        text_tensor = torch.tensor(aligned_sentiment, dtype=torch.float32)  # [1, 768]
-    else:
-        text_tensor = torch.zeros((1, 768), dtype=torch.float32)
-
-    # 4. Forward pass
-    model = get_or_load_model()
+    # 3. Forward pass
     with torch.no_grad():
-        prob = float(model.predict_probability(ts_tensor, text_tensor).item())
+        prob = float(bundle.model.predict_probability(ts_tensor, text_tensor).item())
 
-    # 5. Risk classification
+    # 4. Risk classification
     if prob >= 0.70:
         risk_level = "CRITICAL_VOLATILITY"
     elif prob >= 0.40:

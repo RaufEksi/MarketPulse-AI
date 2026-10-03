@@ -52,3 +52,23 @@ def test_walk_forward_dataloaders():
     assert len(train_l.dataset) == 30
     assert len(val_l.dataset) == 10
     assert len(test_l.dataset) == 10
+
+
+def test_aligner_decay_uses_real_seconds_for_any_datetime_unit():
+    """Decay weights depend on elapsed seconds, whatever datetime64 resolution pandas picks."""
+    # Arrange: one text 1h and one 2h before the bar, microsecond-resolution timestamps
+    bar_time = pd.Timestamp("2026-01-05 15:00", tz="UTC")
+    bars = pd.DataFrame({"timestamp": pd.Series([bar_time]).astype("datetime64[us, UTC]")})
+    texts = pd.DataFrame(
+        {"timestamp": [bar_time - pd.Timedelta(hours=1), bar_time - pd.Timedelta(hours=2)]}
+    )
+    embeddings = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+
+    # Act
+    aligned = TemporalAligner(decay_lambda_per_hour=1.0).align_sentiment_to_bars(
+        bars, texts, embeddings, embedding_dim=2
+    )
+
+    # Assert: weights exp(-1) and exp(-2), normalized
+    w1, w2 = np.exp(-1.0), np.exp(-2.0)
+    np.testing.assert_allclose(aligned[0], [w1 / (w1 + w2), w2 / (w1 + w2)], rtol=1e-5)
