@@ -14,7 +14,7 @@ import argparse
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -159,6 +159,7 @@ def load_bars(source: str, symbol: str, days: int) -> pd.DataFrame:
                 raise
             # e.g. placeholder keys in .env -> 401; auto mode should still train
             logger.warning(f"Alpaca failed ({e.message}); falling back to Yahoo Finance.")
+            source = "yfinance"
             period_days = min(days, YFINANCE_MAX_5MIN_DAYS)
             bars = YFinanceDataCollector().fetch_5min_bars(symbol, period=f"{period_days}d")
     else:
@@ -260,13 +261,18 @@ def load_texts(
         frames.append(file_df)
 
     if use_collectors:
-        for name, fetch in (
+        collectors: List[Tuple[str, Callable[[], pd.DataFrame]]] = [
             (
                 "reddit",
                 lambda: fetch_reddit_by_day(RedditCollector(), symbol, after, before, reddit_limit),
-            ),
-            ("news", lambda: NewsCollector().fetch_headlines(symbols=[symbol])),
-        ):
+            )
+        ]
+        if get_settings().news_api_key:
+            collectors.append(("news", lambda: NewsCollector().fetch_headlines(symbols=[symbol])))
+        else:
+            # NewsCollector would return synthetic headlines; never train on fake text
+            logger.warning("NewsAPI key missing; skipping news texts for training.")
+        for name, fetch in collectors:
             try:
                 frames.append(fetch())
             except MarketPulseException as e:
